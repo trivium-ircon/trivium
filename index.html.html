@@ -108,7 +108,16 @@
 <!-- LOGIN SCREEN                                  -->
 <!-- ============================================ -->
 <div id="screen-login" class="min-h-screen flex bg-trivium-900">
-  <div class="w-full lg:w-1/2 flex items-center justify-center p-8">
+  <!-- Banner de modo demo -->
+  <div id="demoBanner" class="fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-trivium-blue to-trivium-blue-dark text-white px-4 py-2.5 text-sm flex items-center justify-center gap-3 shadow-lg">
+    <i data-lucide="info" class="w-4 h-4"></i>
+    <span><strong>Modo demo ativo</strong> · Você pode entrar com qualquer email para testar</span>
+    <button onclick="openConfig()" class="bg-white text-trivium-blue px-3 py-1 rounded-md font-semibold text-xs hover:bg-blue-50 ml-2 flex items-center gap-1">
+      <i data-lucide="link" class="w-3.5 h-3.5"></i>Conectar Supabase
+    </button>
+  </div>
+
+  <div class="w-full lg:w-1/2 flex items-center justify-center p-8 pt-20">
     <div class="w-full max-w-sm">
       <div class="flex items-center justify-between mb-12">
         <div class="flex items-center gap-3">
@@ -1344,8 +1353,12 @@ function loadSupabaseConfig() {
     sb = window.supabase.createClient(url, key);
     document.getElementById('cfgStatus').textContent = 'Conectado';
     document.getElementById('cfgStatus').className = 'text-green-400';
+    const banner = document.getElementById('demoBanner');
+    if (banner) banner.style.display = 'none';
     return true;
   }
+  const banner = document.getElementById('demoBanner');
+  if (banner) banner.style.display = '';
   return false;
 }
 
@@ -1356,14 +1369,40 @@ function openConfig() {
 }
 
 function saveConfig() {
-  const url = document.getElementById('cfgUrl').value.trim();
+  let url = document.getElementById('cfgUrl').value.trim();
   const key = document.getElementById('cfgKey').value.trim();
   const errEl = document.getElementById('cfgErr');
   errEl.classList.add('hidden');
-  if (!url.includes('supabase.co') || !key.startsWith('eyJ')) {
-    errEl.textContent = 'URL ou chave em formato inválido. Verifique e tente novamente.';
+
+  // Auto-corrige se o usuário colou a URL do dashboard
+  // Dashboard format: https://supabase.com/dashboard/project/<ID>/...
+  const dashMatch = url.match(/supabase\.com\/dashboard\/project\/([a-z0-9]+)/i);
+  if (dashMatch) {
+    url = `https://${dashMatch[1]}.supabase.co`;
+  }
+  // Remove barra final se houver
+  url = url.replace(/\/$/, '');
+
+  // Valida URL no formato projeto
+  const isValidUrl = /^https:\/\/[a-z0-9]+\.supabase\.co$/i.test(url);
+  // Aceita formatos: eyJ (JWT antigo) e sb_publishable_ / sb_anon_ (novo)
+  const isValidKey = key.startsWith('eyJ') || key.startsWith('sb_publishable_') || key.startsWith('sb_anon_');
+  // Bloqueia uso de service key
+  const isSecretKey = key.startsWith('sb_secret_') || key.startsWith('service_role');
+
+  if (isSecretKey) {
+    errEl.textContent = '⚠️ NUNCA cole a chave secreta (sb_secret_...) aqui. Use a "Publishable key" (sb_publishable_...).';
     errEl.classList.remove('hidden'); return;
   }
+  if (!isValidUrl) {
+    errEl.textContent = 'URL inválida. Use o formato: https://SEU-ID.supabase.co (sem /dashboard nem /settings).';
+    errEl.classList.remove('hidden'); return;
+  }
+  if (!isValidKey) {
+    errEl.textContent = 'Chave inválida. Use a "Publishable key" (começa com sb_publishable_) ou a Anon key antiga (eyJ...).';
+    errEl.classList.remove('hidden'); return;
+  }
+
   localStorage.setItem('triv_sb_url', url);
   localStorage.setItem('triv_sb_key', key);
   document.getElementById('configModal').classList.add('hidden');
@@ -1377,6 +1416,8 @@ function useDemoMode() {
   sb = null;
   document.getElementById('cfgStatus').textContent = 'Demo';
   document.getElementById('cfgStatus').className = '';
+  const banner = document.getElementById('demoBanner');
+  if (banner) banner.style.display = '';
   document.getElementById('configModal').classList.add('hidden');
 }
 
