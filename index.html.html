@@ -229,6 +229,9 @@
         <i data-lucide="inbox" class="w-4 h-4"></i><span>Caixa de entrada</span>
         <span class="ml-auto w-2 h-2 bg-red-500 rounded-full pulse-dot"></span>
       </button>
+      <button onclick="goTo('metas')" data-nav="metas" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
+        <i data-lucide="target" class="w-4 h-4"></i><span>Metas</span>
+      </button>
       <div class="pt-4 pb-1.5 px-3"><span class="text-[10px] uppercase font-semibold tracking-widest text-slate-500">Captação</span></div>
       <button onclick="goTo('importar')" data-nav="importar" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
         <i data-lucide="upload-cloud" class="w-4 h-4"></i><span>Importar lista</span>
@@ -542,6 +545,68 @@
           </div>
         </div>
         <div id="inboxList" class="space-y-2"></div>
+      </section>
+
+      <!-- ============ METAS ============ -->
+      <section data-page="metas" class="page hidden p-8 fade-in">
+        <div class="flex items-end justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900">Metas</h1>
+            <p class="text-slate-500 text-sm mt-1">Defina seus objetivos e acompanhe o progresso em tempo real</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="flex bg-slate-100 p-1 rounded-lg">
+              <button onclick="setMetasPeriod('diaria')" data-period="diaria" class="period-btn px-4 py-1.5 rounded-md text-sm font-medium transition">Diária</button>
+              <button onclick="setMetasPeriod('mensal')" data-period="mensal" class="period-btn px-4 py-1.5 rounded-md text-sm font-medium transition">Mensal</button>
+            </div>
+            <button onclick="openEditMetas()" class="bg-trivium-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-trivium-blue-dark flex items-center gap-2">
+              <i data-lucide="pencil" class="w-4 h-4"></i>Editar metas
+            </button>
+          </div>
+        </div>
+
+        <!-- Resumo geral -->
+        <div class="bg-gradient-to-br from-trivium-blue to-trivium-blue-dark text-white rounded-2xl p-6 mb-6 relative overflow-hidden">
+          <div class="absolute -right-8 -top-8 w-40 h-40 bg-white/5 rounded-full"></div>
+          <div class="absolute -right-4 -bottom-12 w-32 h-32 bg-white/5 rounded-full"></div>
+          <div class="relative">
+            <div class="flex items-center gap-2 text-sm text-blue-100 mb-2">
+              <i data-lucide="target" class="w-4 h-4"></i>
+              <span id="metasPeriodLabel">Meta diária · Hoje</span>
+            </div>
+            <h2 class="text-3xl font-bold mb-1">Performance geral</h2>
+            <p class="text-blue-100 text-sm mb-5" id="metasResumo">Você está em <span class="font-semibold text-white">73%</span> da sua meta combinada</p>
+            <div class="h-2.5 bg-white/20 rounded-full overflow-hidden">
+              <div id="metasProgressGeral" class="h-full bg-white rounded-full transition-all duration-500" style="width: 73%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cards de metas -->
+        <div class="grid grid-cols-3 gap-5 mb-6" id="metasCards"></div>
+
+        <!-- Insights -->
+        <div class="grid grid-cols-2 gap-5">
+          <div class="bg-white border border-slate-200 rounded-xl p-6">
+            <h3 class="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <i data-lucide="trending-up" class="w-5 h-5 text-green-600"></i>
+              No ritmo certo?
+            </h3>
+            <div id="metasInsights" class="space-y-3 text-sm"></div>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-6">
+            <h3 class="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+              <i data-lucide="lightbulb" class="w-5 h-5 text-yellow-500"></i>
+              Sugestões
+            </h3>
+            <ul class="space-y-3 text-sm text-slate-600">
+              <li class="flex gap-2"><span class="text-trivium-blue">•</span>Importe novas listas para aumentar o volume de leads.</li>
+              <li class="flex gap-2"><span class="text-trivium-blue">•</span>Teste 2-3 variações de mensagem inicial — pode subir taxa de resposta em 5%.</li>
+              <li class="flex gap-2"><span class="text-trivium-blue">•</span>Responda em até 30 minutos para dobrar a chance de fechar reunião.</li>
+              <li class="flex gap-2"><span class="text-trivium-blue">•</span>Revise leads classificados como "Dúvida" — eles convertem em 40%.</li>
+            </ul>
+          </div>
+        </div>
       </section>
 
       <!-- ============ IMPORTAR ============ -->
@@ -961,6 +1026,75 @@
           <button onclick="closeEditCampaign()" class="border border-slate-200 px-4 py-2 rounded-lg text-sm">Cancelar</button>
           <button onclick="saveEditCampaign()" class="bg-trivium-blue text-white px-5 py-2 rounded-lg text-sm font-medium">Salvar</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Metas Modal -->
+  <div id="editMetasModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-thin">
+      <div class="sticky top-0 bg-white border-b border-slate-100 p-5 flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-bold flex items-center gap-2"><i data-lucide="target" class="w-5 h-5 text-trivium-blue"></i>Editar metas</h3>
+          <p class="text-xs text-slate-500">Defina objetivos realistas mas desafiadores</p>
+        </div>
+        <button onclick="closeEditMetas()" class="p-1 hover:bg-slate-100 rounded"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-6 space-y-6">
+        <!-- DIÁRIAS -->
+        <div>
+          <h4 class="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+            <span class="w-7 h-7 rounded-full bg-blue-100 text-trivium-blue flex items-center justify-center text-xs font-bold">D</span>
+            Metas diárias
+          </h4>
+          <div class="grid grid-cols-3 gap-3 pl-9">
+            <div>
+              <label class="text-xs text-slate-500 flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i>Leads contatados</label>
+              <input id="metaDiaLeads" type="number" min="0" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label class="text-xs text-slate-500 flex items-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i>Taxa de resposta (%)</label>
+              <input id="metaDiaTaxa" type="number" min="0" max="100" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label class="text-xs text-slate-500 flex items-center gap-1"><i data-lucide="calendar-check" class="w-3 h-3"></i>Reuniões / propostas</label>
+              <input id="metaDiaReunioes" type="number" min="0" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+            </div>
+          </div>
+        </div>
+
+        <!-- MENSAIS -->
+        <div>
+          <h4 class="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+            <span class="w-7 h-7 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-bold">M</span>
+            Metas mensais
+          </h4>
+          <div class="grid grid-cols-3 gap-3 pl-9">
+            <div>
+              <label class="text-xs text-slate-500 flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i>Leads contatados</label>
+              <input id="metaMesLeads" type="number" min="0" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label class="text-xs text-slate-500 flex items-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i>Taxa de resposta (%)</label>
+              <input id="metaMesTaxa" type="number" min="0" max="100" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label class="text-xs text-slate-500 flex items-center gap-1"><i data-lucide="calendar-check" class="w-3 h-3"></i>Reuniões / propostas</label>
+              <input id="metaMesReunioes" type="number" min="0" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-slate-700 flex gap-2">
+          <i data-lucide="info" class="w-4 h-4 text-trivium-blue flex-shrink-0 mt-0.5"></i>
+          <div>
+            <strong>Dica:</strong> defina metas que você consiga bater 70-80% das vezes. Muito alta desmotiva, muito baixa não desafia. Ajuste depois conforme seu ritmo real.
+          </div>
+        </div>
+      </div>
+      <div class="sticky bottom-0 bg-white border-t border-slate-100 p-4 flex gap-2 justify-end">
+        <button onclick="closeEditMetas()" class="border border-slate-200 px-4 py-2 rounded-lg text-sm">Cancelar</button>
+        <button onclick="saveMetas()" class="bg-trivium-blue text-white px-5 py-2 rounded-lg text-sm font-medium">Salvar metas</button>
       </div>
     </div>
   </div>
@@ -1476,6 +1610,174 @@ function renderChart() {
   });
 }
 
+// ============== METAS ==============
+const METAS_DEFAULT = {
+  diaria: { leads: 100, taxa: 25, reunioes: 5 },
+  mensal: { leads: 2000, taxa: 25, reunioes: 100 },
+};
+let metasPeriodo = 'diaria';
+
+// Valores reais (mock — depois vamos buscar do banco)
+const METAS_ATUAL = {
+  diaria: { leads: 47, taxa: 21, reunioes: 4 },
+  mensal: { leads: 1289, taxa: 23, reunioes: 87 },
+};
+
+function loadMetas() {
+  const saved = localStorage.getItem('triv_metas');
+  if (saved) { try { return JSON.parse(saved); } catch(e){} }
+  return JSON.parse(JSON.stringify(METAS_DEFAULT));
+}
+
+let METAS = loadMetas();
+
+function setMetasPeriod(p) {
+  metasPeriodo = p;
+  document.querySelectorAll('.period-btn').forEach(b => {
+    b.classList.remove('bg-white','shadow-sm','text-slate-900');
+    b.classList.add('text-slate-500');
+  });
+  const active = document.querySelector(`.period-btn[data-period="${p}"]`);
+  active.classList.add('bg-white','shadow-sm','text-slate-900');
+  active.classList.remove('text-slate-500');
+  renderMetas();
+}
+
+function renderMetas() {
+  const meta = METAS[metasPeriodo];
+  const atual = METAS_ATUAL[metasPeriodo];
+
+  const labelPeriodo = metasPeriodo === 'diaria' ? 'Meta diária · Hoje' : 'Meta mensal · Este mês';
+  document.getElementById('metasPeriodLabel').textContent = labelPeriodo;
+
+  // % de cada meta
+  const pctLeads = Math.min(100, (atual.leads / Math.max(1,meta.leads)) * 100);
+  const pctTaxa = Math.min(100, (atual.taxa / Math.max(1,meta.taxa)) * 100);
+  const pctReun = Math.min(100, (atual.reunioes / Math.max(1,meta.reunioes)) * 100);
+  const pctGeral = Math.round((pctLeads + pctTaxa + pctReun) / 3);
+
+  document.getElementById('metasProgressGeral').style.width = pctGeral + '%';
+  document.getElementById('metasResumo').innerHTML =
+    `Você está em <span class="font-semibold text-white">${pctGeral}%</span> da sua meta combinada`;
+
+  const cards = [
+    {
+      label: 'Leads contatados', icon: 'users', color: 'blue',
+      atual: atual.leads, meta: meta.leads, pct: pctLeads, suffix: '',
+      faltam: Math.max(0, meta.leads - atual.leads),
+      hint: meta.leads > atual.leads ? `Faltam ${meta.leads - atual.leads} leads` : 'Meta batida! 🎉',
+    },
+    {
+      label: 'Taxa de resposta', icon: 'message-circle', color: 'purple',
+      atual: atual.taxa, meta: meta.taxa, pct: pctTaxa, suffix: '%',
+      faltam: Math.max(0, meta.taxa - atual.taxa),
+      hint: meta.taxa > atual.taxa ? `${(meta.taxa - atual.taxa).toFixed(1)}pp abaixo da meta` : 'Meta batida! 🎉',
+    },
+    {
+      label: 'Reuniões / Propostas', icon: 'calendar-check', color: 'orange',
+      atual: atual.reunioes, meta: meta.reunioes, pct: pctReun, suffix: '',
+      faltam: Math.max(0, meta.reunioes - atual.reunioes),
+      hint: meta.reunioes > atual.reunioes ? `Faltam ${meta.reunioes - atual.reunioes} reuniões` : 'Meta batida! 🎉',
+    },
+  ];
+
+  const COLORS = {
+    blue: { bg:'bg-blue-50', text:'text-trivium-blue', bar:'bg-trivium-blue', ring:'border-blue-200' },
+    purple: { bg:'bg-purple-50', text:'text-purple-700', bar:'bg-purple-500', ring:'border-purple-200' },
+    orange: { bg:'bg-orange-50', text:'text-orange-700', bar:'bg-orange-500', ring:'border-orange-200' },
+  };
+
+  document.getElementById('metasCards').innerHTML = cards.map(c => {
+    const col = COLORS[c.color];
+    const pctRound = Math.round(c.pct);
+    const pctColor = c.pct >= 100 ? 'text-green-600' : c.pct >= 70 ? col.text : 'text-slate-500';
+    const statusBadge = c.pct >= 100
+      ? '<span class="text-xs font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">✓ Atingida</span>'
+      : c.pct >= 70
+        ? '<span class="text-xs font-semibold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">No ritmo</span>'
+        : '<span class="text-xs font-semibold text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full">Atrás</span>';
+    return `
+      <div class="bg-white border ${col.ring} rounded-xl p-5 hover:shadow-md transition">
+        <div class="flex items-center justify-between mb-4">
+          <div class="w-10 h-10 rounded-lg ${col.bg} flex items-center justify-center">
+            <i data-lucide="${c.icon}" class="w-5 h-5 ${col.text}"></i>
+          </div>
+          ${statusBadge}
+        </div>
+        <div class="text-sm text-slate-500 mb-1">${c.label}</div>
+        <div class="flex items-baseline gap-2 mb-3">
+          <span class="text-3xl font-bold text-slate-900">${c.atual}${c.suffix}</span>
+          <span class="text-sm text-slate-400">/ ${c.meta}${c.suffix}</span>
+        </div>
+        <div class="h-2 bg-slate-100 rounded-full overflow-hidden mb-2">
+          <div class="h-full ${col.bar} rounded-full transition-all duration-500" style="width: ${c.pct}%"></div>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-semibold ${pctColor}">${pctRound}%</span>
+          <span class="text-slate-500">${c.hint}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Insights
+  const insights = [];
+  if (pctLeads >= 100) insights.push({ ok:true, txt:`<strong>Volume de leads:</strong> meta atingida! Continue importando listas.` });
+  else if (pctLeads >= 70) insights.push({ ok:true, txt:`<strong>Volume de leads:</strong> ${Math.round(pctLeads)}% — você está no ritmo.` });
+  else insights.push({ ok:false, txt:`<strong>Volume de leads:</strong> ${Math.round(pctLeads)}% — aumente disparos ou importe novas listas.` });
+
+  if (pctTaxa >= 100) insights.push({ ok:true, txt:`<strong>Taxa de resposta:</strong> excelente, acima da meta!` });
+  else if (pctTaxa >= 70) insights.push({ ok:true, txt:`<strong>Taxa de resposta:</strong> ${atual.taxa}% — perto da meta de ${meta.taxa}%.` });
+  else insights.push({ ok:false, txt:`<strong>Taxa de resposta:</strong> ${atual.taxa}% — teste novas mensagens iniciais.` });
+
+  if (pctReun >= 100) insights.push({ ok:true, txt:`<strong>Reuniões:</strong> meta batida com folga.` });
+  else if (pctReun >= 70) insights.push({ ok:true, txt:`<strong>Reuniões:</strong> ${atual.reunioes}/${meta.reunioes} — bom progresso.` });
+  else insights.push({ ok:false, txt:`<strong>Reuniões:</strong> apenas ${atual.reunioes}/${meta.reunioes} — responda rápido aos interessados.` });
+
+  document.getElementById('metasInsights').innerHTML = insights.map(i => `
+    <div class="flex gap-2 items-start">
+      <i data-lucide="${i.ok ? 'check-circle-2' : 'alert-circle'}" class="w-4 h-4 ${i.ok ? 'text-green-600' : 'text-yellow-600'} flex-shrink-0 mt-0.5"></i>
+      <span class="text-slate-700">${i.txt}</span>
+    </div>
+  `).join('');
+
+  lucide.createIcons();
+}
+
+function openEditMetas() {
+  document.getElementById('metaDiaLeads').value = METAS.diaria.leads;
+  document.getElementById('metaDiaTaxa').value = METAS.diaria.taxa;
+  document.getElementById('metaDiaReunioes').value = METAS.diaria.reunioes;
+  document.getElementById('metaMesLeads').value = METAS.mensal.leads;
+  document.getElementById('metaMesTaxa').value = METAS.mensal.taxa;
+  document.getElementById('metaMesReunioes').value = METAS.mensal.reunioes;
+  document.getElementById('editMetasModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function closeEditMetas() {
+  document.getElementById('editMetasModal').classList.add('hidden');
+}
+
+function saveMetas() {
+  METAS = {
+    diaria: {
+      leads: Number(document.getElementById('metaDiaLeads').value) || 0,
+      taxa: Number(document.getElementById('metaDiaTaxa').value) || 0,
+      reunioes: Number(document.getElementById('metaDiaReunioes').value) || 0,
+    },
+    mensal: {
+      leads: Number(document.getElementById('metaMesLeads').value) || 0,
+      taxa: Number(document.getElementById('metaMesTaxa').value) || 0,
+      reunioes: Number(document.getElementById('metaMesReunioes').value) || 0,
+    },
+  };
+  localStorage.setItem('triv_metas', JSON.stringify(METAS));
+  closeEditMetas();
+  renderMetas();
+  showToastInfo('Metas atualizadas!');
+}
+
 // ============== EDIT CAMPAIGN ==============
 let editingCampIdx = null;
 function openEditCampaign(idx) {
@@ -1561,6 +1863,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderInbox();
   renderCampanhas();
   renderTemplates();
+  setMetasPeriod('diaria');
 
   // Auth init
   switchAuthTab('login');
