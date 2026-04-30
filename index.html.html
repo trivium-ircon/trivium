@@ -60,21 +60,48 @@
 <!-- ============================================ -->
 <svg width="0" height="0" style="position:absolute">
   <defs>
-    <linearGradient id="trivLogo" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="trivBlueLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60A5FA"/>
+      <stop offset="55%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#1E3A8A"/>
+    </linearGradient>
+    <linearGradient id="trivBlueMid" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#3B82F6"/>
       <stop offset="100%" stop-color="#1D4ED8"/>
     </linearGradient>
+    <linearGradient id="trivSilver" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E2E8F0"/>
+      <stop offset="100%" stop-color="#64748B"/>
+    </linearGradient>
+    <linearGradient id="trivBlueDark" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#1E40AF"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <!-- Aliases for compatibility -->
+    <linearGradient id="trivLogo" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60A5FA"/>
+      <stop offset="100%" stop-color="#1E3A8A"/>
+    </linearGradient>
     <linearGradient id="trivLogoDark" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#64748B"/>
-      <stop offset="100%" stop-color="#334155"/>
+      <stop offset="0%" stop-color="#94A3B8"/>
+      <stop offset="100%" stop-color="#475569"/>
     </linearGradient>
   </defs>
 </svg>
 
+<!-- Logo template: inverted triangle with stylized T, multi-faceted 3D origami -->
 <template id="logo-tpl">
   <svg viewBox="0 0 64 64" class="w-full h-full">
-    <path d="M4 8 L60 8 L52 22 L40 22 L40 56 L24 56 L24 22 L12 22 Z" fill="url(#trivLogo)"/>
-    <path d="M40 22 L40 56 L24 56 L24 38 Z" fill="url(#trivLogoDark)" opacity="0.6"/>
+    <!-- Top horizontal bar - left part (bright blue) -->
+    <polygon points="6,14 32,14 32,26 22,26 22,20 6,20" fill="url(#trivBlueLight)"/>
+    <!-- Top horizontal bar - right part (mid blue) -->
+    <polygon points="32,14 58,14 50,22 42,22 32,26" fill="url(#trivBlueMid)"/>
+    <!-- Left dark shadow / shoulder -->
+    <polygon points="6,20 22,20 22,26 28,52 16,42" fill="url(#trivBlueDark)" opacity="0.85"/>
+    <!-- Stem of T - silver front face -->
+    <polygon points="22,26 32,26 42,22 38,50 32,58 28,52" fill="url(#trivSilver)"/>
+    <!-- Stem - right blue accent / highlight edge -->
+    <polygon points="42,22 50,22 38,50" fill="url(#trivBlueLight)"/>
   </svg>
 </template>
 
@@ -83,7 +110,7 @@
 <!-- ============================================ -->
 <div id="configModal" class="hidden fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4">
   <div class="bg-white rounded-xl max-w-lg w-full p-6">
-    <div class="w-12 h-12 mb-4"><svg viewBox="0 0 64 64" class="w-full h-full"><path d="M4 8 L60 8 L52 22 L40 22 L40 56 L24 56 L24 22 L12 22 Z" fill="url(#trivLogo)"/><path d="M40 22 L40 56 L24 56 L24 38 Z" fill="url(#trivLogoDark)" opacity="0.6"/></svg></div>
+    <div class="w-12 h-12 mb-4"><svg viewBox="0 0 64 64" class="w-full h-full"><polygon points="6,14 32,14 32,26 22,26 22,20 6,20" fill="url(#trivBlueLight)"/><polygon points="32,14 58,14 50,22 42,22 32,26" fill="url(#trivBlueMid)"/><polygon points="6,20 22,20 22,26 28,52 16,42" fill="url(#trivBlueDark)" opacity="0.85"/><polygon points="22,26 32,26 42,22 38,50 32,58 28,52" fill="url(#trivSilver)"/><polygon points="42,22 50,22 38,50" fill="url(#trivBlueLight)"/></svg></div>
     <h3 class="text-xl font-bold mb-1">Conectar Supabase</h3>
     <p class="text-sm text-slate-500 mb-5">Cole as chaves do seu projeto Supabase pra ativar o login real. Encontre em: Settings → API.</p>
     <div class="space-y-3">
@@ -112,7 +139,7 @@
     <div class="w-full max-w-sm">
       <div class="flex items-center justify-between mb-12">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10"><svg viewBox="0 0 64 64" class="w-full h-full"><path d="M4 8 L60 8 L52 22 L40 22 L40 56 L24 56 L24 22 L12 22 Z" fill="url(#trivLogo)"/><path d="M40 22 L40 56 L24 56 L24 38 Z" fill="url(#trivLogoDark)" opacity="0.6"/></svg></div>
+          <div class="w-10 h-10"><svg viewBox="0 0 64 64" class="w-full h-full"><polygon points="6,14 32,14 32,26 22,26 22,20 6,20" fill="url(#trivBlueLight)"/><polygon points="32,14 58,14 50,22 42,22 32,26" fill="url(#trivBlueMid)"/><polygon points="6,20 22,20 22,26 28,52 16,42" fill="url(#trivBlueDark)" opacity="0.85"/><polygon points="22,26 32,26 42,22 38,50 32,58 28,52" fill="url(#trivSilver)"/><polygon points="42,22 50,22 38,50" fill="url(#trivBlueLight)"/></svg></div>
           <span class="text-2xl font-bold text-white tracking-tight">TRIVIUM</span>
         </div>
         <button onclick="openConfig()" class="text-xs text-slate-400 hover:text-white flex items-center gap-1" title="Configurar Supabase"><i data-lucide="settings" class="w-3.5 h-3.5"></i><span id="cfgStatus">Demo</span></button>
@@ -180,7 +207,7 @@
   <div class="hidden lg:flex w-1/2 bg-trivium-900 relative overflow-hidden items-center justify-center p-12">
     <div class="absolute inset-0 opacity-30" style="background-image: radial-gradient(circle at 25% 25%, #2563EB 0%, transparent 50%), radial-gradient(circle at 75% 75%, #1D4ED8 0%, transparent 50%);"></div>
     <div class="relative z-10 text-white max-w-md">
-      <div class="w-20 h-20 mb-8"><svg viewBox="0 0 64 64" class="w-full h-full"><path d="M4 8 L60 8 L52 22 L40 22 L40 56 L24 56 L24 22 L12 22 Z" fill="url(#trivLogo)"/><path d="M40 22 L40 56 L24 56 L24 38 Z" fill="url(#trivLogoDark)" opacity="0.6"/></svg></div>
+      <div class="w-20 h-20 mb-8"><svg viewBox="0 0 64 64" class="w-full h-full"><polygon points="6,14 32,14 32,26 22,26 22,20 6,20" fill="url(#trivBlueLight)"/><polygon points="32,14 58,14 50,22 42,22 32,26" fill="url(#trivBlueMid)"/><polygon points="6,20 22,20 22,26 28,52 16,42" fill="url(#trivBlueDark)" opacity="0.85"/><polygon points="22,26 32,26 42,22 38,50 32,58 28,52" fill="url(#trivSilver)"/><polygon points="42,22 50,22 38,50" fill="url(#trivBlueLight)"/></svg></div>
       <h2 class="text-4xl font-bold mb-4 leading-tight">Crescimento movido por inteligência</h2>
       <p class="text-slate-300 text-lg leading-relaxed mb-8">Automação comercial inteligente para gerar mais leads, mais conversas e mais clientes pro seu negócio.</p>
       <div class="grid grid-cols-3 gap-4">
@@ -210,7 +237,7 @@
   <aside class="w-60 gradient-dark text-white flex flex-col border-r border-slate-800">
     <div class="p-5 border-b border-slate-800/50">
       <div class="flex items-center gap-2.5">
-        <div class="w-8 h-8"><svg viewBox="0 0 64 64" class="w-full h-full"><path d="M4 8 L60 8 L52 22 L40 22 L40 56 L24 56 L24 22 L12 22 Z" fill="url(#trivLogo)"/><path d="M40 22 L40 56 L24 56 L24 38 Z" fill="url(#trivLogoDark)" opacity="0.6"/></svg></div>
+        <div class="w-8 h-8"><svg viewBox="0 0 64 64" class="w-full h-full"><polygon points="6,14 32,14 32,26 22,26 22,20 6,20" fill="url(#trivBlueLight)"/><polygon points="32,14 58,14 50,22 42,22 32,26" fill="url(#trivBlueMid)"/><polygon points="6,20 22,20 22,26 28,52 16,42" fill="url(#trivBlueDark)" opacity="0.85"/><polygon points="22,26 32,26 42,22 38,50 32,58 28,52" fill="url(#trivSilver)"/><polygon points="42,22 50,22 38,50" fill="url(#trivBlueLight)"/></svg></div>
         <span class="text-lg font-bold tracking-tight">TRIVIUM</span>
       </div>
     </div>
@@ -558,6 +585,7 @@
             <div class="flex bg-slate-100 p-1 rounded-lg">
               <button onclick="setMetasPeriod('diaria')" data-period="diaria" class="period-btn px-4 py-1.5 rounded-md text-sm font-medium transition">Diária</button>
               <button onclick="setMetasPeriod('mensal')" data-period="mensal" class="period-btn px-4 py-1.5 rounded-md text-sm font-medium transition">Mensal</button>
+              <button onclick="setMetasPeriod('anual')" data-period="anual" class="period-btn px-4 py-1.5 rounded-md text-sm font-medium transition">Anual</button>
             </div>
             <button onclick="openEditMetas()" class="bg-trivium-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-trivium-blue-dark flex items-center gap-2">
               <i data-lucide="pencil" class="w-4 h-4"></i>Editar metas
@@ -583,7 +611,33 @@
         </div>
 
         <!-- Cards de metas -->
-        <div class="grid grid-cols-3 gap-5 mb-6" id="metasCards"></div>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-6" id="metasCards"></div>
+
+        <!-- Planejamento Anual (visível apenas no período anual) -->
+        <div id="metasAnualPanel" class="hidden bg-white border border-slate-200 rounded-xl p-6 mb-6">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <h3 class="font-semibold text-slate-900 flex items-center gap-2"><i data-lucide="calendar-range" class="w-5 h-5 text-trivium-blue"></i>Planejamento do ano <span id="metasAnoAtual">2026</span></h3>
+              <p class="text-xs text-slate-500 mt-0.5">Acompanhe mês a mês como você está em relação ao plano anual</p>
+            </div>
+            <div class="flex items-center gap-3 text-xs">
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-green-500 rounded-full"></span>Meta atingida</span>
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-trivium-blue rounded-full"></span>No ritmo</span>
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-yellow-400 rounded-full"></span>Atrás</span>
+              <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-slate-200 rounded-full"></span>Futuro</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-12 gap-2 mb-6" id="metasAnoMeses"></div>
+
+          <div class="border-t border-slate-100 pt-5">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="font-semibold text-slate-900 text-sm">Acúmulo de clientes fechados ao longo do ano</h4>
+              <span class="text-xs text-slate-500">Meta anual: <span id="metasMetaAnualClientes" class="font-semibold text-trivium-blue">120</span> clientes</span>
+            </div>
+            <div class="h-40"><canvas id="anualChart"></canvas></div>
+          </div>
+        </div>
 
         <!-- Insights -->
         <div class="grid grid-cols-2 gap-5">
@@ -1069,7 +1123,7 @@
             <span class="w-7 h-7 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-bold">M</span>
             Metas mensais
           </h4>
-          <div class="grid grid-cols-3 gap-3 pl-9">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 pl-9">
             <div>
               <label class="text-xs text-slate-500 flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i>Leads contatados</label>
               <input id="metaMesLeads" type="number" min="0" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
@@ -1081,6 +1135,36 @@
             <div>
               <label class="text-xs text-slate-500 flex items-center gap-1"><i data-lucide="calendar-check" class="w-3 h-3"></i>Reuniões / propostas</label>
               <input id="metaMesReunioes" type="number" min="0" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label class="text-xs text-slate-500 flex items-center gap-1"><i data-lucide="trophy" class="w-3 h-3"></i>Clientes fechados</label>
+              <input id="metaMesClientes" type="number" min="0" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+            </div>
+          </div>
+        </div>
+
+        <!-- ANUAIS -->
+        <div>
+          <h4 class="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+            <span class="w-7 h-7 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-xs font-bold">A</span>
+            Metas anuais (planejamento do ano)
+          </h4>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 pl-9">
+            <div>
+              <label class="text-xs text-slate-500 flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i>Leads contatados</label>
+              <input id="metaAnoLeads" type="number" min="0" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label class="text-xs text-slate-500 flex items-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i>Taxa de resposta (%)</label>
+              <input id="metaAnoTaxa" type="number" min="0" max="100" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label class="text-xs text-slate-500 flex items-center gap-1"><i data-lucide="calendar-check" class="w-3 h-3"></i>Reuniões / propostas</label>
+              <input id="metaAnoReunioes" type="number" min="0" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label class="text-xs text-slate-500 flex items-center gap-1"><i data-lucide="trophy" class="w-3 h-3"></i>Clientes fechados</label>
+              <input id="metaAnoClientes" type="number" min="0" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
             </div>
           </div>
         </div>
@@ -1613,23 +1697,46 @@ function renderChart() {
 // ============== METAS ==============
 const METAS_DEFAULT = {
   diaria: { leads: 100, taxa: 25, reunioes: 5 },
-  mensal: { leads: 2000, taxa: 25, reunioes: 100 },
+  mensal: { leads: 2000, taxa: 25, reunioes: 100, clientes: 10 },
+  anual: { leads: 24000, taxa: 25, reunioes: 1200, clientes: 120 },
 };
 let metasPeriodo = 'diaria';
 
 // Valores reais (mock — depois vamos buscar do banco)
 const METAS_ATUAL = {
   diaria: { leads: 47, taxa: 21, reunioes: 4 },
-  mensal: { leads: 1289, taxa: 23, reunioes: 87 },
+  mensal: { leads: 1289, taxa: 23, reunioes: 87, clientes: 8 },
+  anual: { leads: 4823, taxa: 22, reunioes: 312, clientes: 31 },
 };
+
+// Histórico mensal do ano (mock — Jan a Abr realizado, resto futuro)
+// Ano corrente, mês atual = índice 3 (Abril, considerando data de hoje)
+const ANO_CORRENTE = new Date().getFullYear();
+const MES_ATUAL = new Date().getMonth(); // 0-11
+const MESES_LABELS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const HISTORICO_MENSAL = [
+  { leads: 1100, reunioes: 75, clientes: 9 },
+  { leads: 1200, reunioes: 80, clientes: 8 },
+  { leads: 1234, reunioes: 70, clientes: 6 },
+  { leads: 1289, reunioes: 87, clientes: 8 }, // mês atual
+];
 
 function loadMetas() {
   const saved = localStorage.getItem('triv_metas');
-  if (saved) { try { return JSON.parse(saved); } catch(e){} }
+  if (saved) {
+    try {
+      const obj = JSON.parse(saved);
+      // garante anual existe (compatibilidade com versão antiga)
+      if (!obj.anual) obj.anual = METAS_DEFAULT.anual;
+      if (!obj.mensal.clientes) obj.mensal.clientes = METAS_DEFAULT.mensal.clientes;
+      return obj;
+    } catch(e){}
+  }
   return JSON.parse(JSON.stringify(METAS_DEFAULT));
 }
 
 let METAS = loadMetas();
+let anualChartInstance = null;
 
 function setMetasPeriod(p) {
   metasPeriodo = p;
@@ -1647,44 +1754,58 @@ function renderMetas() {
   const meta = METAS[metasPeriodo];
   const atual = METAS_ATUAL[metasPeriodo];
 
-  const labelPeriodo = metasPeriodo === 'diaria' ? 'Meta diária · Hoje' : 'Meta mensal · Este mês';
-  document.getElementById('metasPeriodLabel').textContent = labelPeriodo;
-
-  // % de cada meta
-  const pctLeads = Math.min(100, (atual.leads / Math.max(1,meta.leads)) * 100);
-  const pctTaxa = Math.min(100, (atual.taxa / Math.max(1,meta.taxa)) * 100);
-  const pctReun = Math.min(100, (atual.reunioes / Math.max(1,meta.reunioes)) * 100);
-  const pctGeral = Math.round((pctLeads + pctTaxa + pctReun) / 3);
-
-  document.getElementById('metasProgressGeral').style.width = pctGeral + '%';
-  document.getElementById('metasResumo').innerHTML =
-    `Você está em <span class="font-semibold text-white">${pctGeral}%</span> da sua meta combinada`;
+  const labelMap = {
+    diaria: 'Meta diária · Hoje',
+    mensal: 'Meta mensal · Este mês',
+    anual: `Meta anual · ${ANO_CORRENTE}`,
+  };
+  document.getElementById('metasPeriodLabel').textContent = labelMap[metasPeriodo];
 
   const cards = [
     {
       label: 'Leads contatados', icon: 'users', color: 'blue',
-      atual: atual.leads, meta: meta.leads, pct: pctLeads, suffix: '',
-      faltam: Math.max(0, meta.leads - atual.leads),
-      hint: meta.leads > atual.leads ? `Faltam ${meta.leads - atual.leads} leads` : 'Meta batida! 🎉',
+      atual: atual.leads, meta: meta.leads, suffix: '',
     },
     {
       label: 'Taxa de resposta', icon: 'message-circle', color: 'purple',
-      atual: atual.taxa, meta: meta.taxa, pct: pctTaxa, suffix: '%',
-      faltam: Math.max(0, meta.taxa - atual.taxa),
-      hint: meta.taxa > atual.taxa ? `${(meta.taxa - atual.taxa).toFixed(1)}pp abaixo da meta` : 'Meta batida! 🎉',
+      atual: atual.taxa, meta: meta.taxa, suffix: '%',
     },
     {
       label: 'Reuniões / Propostas', icon: 'calendar-check', color: 'orange',
-      atual: atual.reunioes, meta: meta.reunioes, pct: pctReun, suffix: '',
-      faltam: Math.max(0, meta.reunioes - atual.reunioes),
-      hint: meta.reunioes > atual.reunioes ? `Faltam ${meta.reunioes - atual.reunioes} reuniões` : 'Meta batida! 🎉',
+      atual: atual.reunioes, meta: meta.reunioes, suffix: '',
     },
   ];
+
+  // Adiciona "Clientes fechados" só em mensal e anual
+  if (metasPeriodo !== 'diaria') {
+    cards.push({
+      label: 'Clientes fechados', icon: 'trophy', color: 'green',
+      atual: atual.clientes || 0, meta: meta.clientes || 0, suffix: '',
+    });
+  }
+
+  // Calcula % de cada meta
+  cards.forEach(c => {
+    c.pct = Math.min(100, (c.atual / Math.max(1, c.meta)) * 100);
+    if (c.suffix === '%') {
+      c.faltam = Math.max(0, c.meta - c.atual);
+      c.hint = c.atual >= c.meta ? 'Meta batida! 🎉' : `${(c.meta - c.atual).toFixed(1)}pp abaixo da meta`;
+    } else {
+      c.faltam = Math.max(0, c.meta - c.atual);
+      c.hint = c.atual >= c.meta ? 'Meta batida! 🎉' : `Faltam ${c.faltam}`;
+    }
+  });
+
+  const pctGeral = Math.round(cards.reduce((s,c) => s + c.pct, 0) / cards.length);
+  document.getElementById('metasProgressGeral').style.width = pctGeral + '%';
+  document.getElementById('metasResumo').innerHTML =
+    `Você está em <span class="font-semibold text-white">${pctGeral}%</span> da sua meta combinada`;
 
   const COLORS = {
     blue: { bg:'bg-blue-50', text:'text-trivium-blue', bar:'bg-trivium-blue', ring:'border-blue-200' },
     purple: { bg:'bg-purple-50', text:'text-purple-700', bar:'bg-purple-500', ring:'border-purple-200' },
     orange: { bg:'bg-orange-50', text:'text-orange-700', bar:'bg-orange-500', ring:'border-orange-200' },
+    green: { bg:'bg-green-50', text:'text-green-700', bar:'bg-green-500', ring:'border-green-200' },
   };
 
   document.getElementById('metasCards').innerHTML = cards.map(c => {
@@ -1720,19 +1841,26 @@ function renderMetas() {
     `;
   }).join('');
 
-  // Insights
+  // Painel anual aparece só no período anual
+  const anualPanel = document.getElementById('metasAnualPanel');
+  if (metasPeriodo === 'anual') {
+    anualPanel.classList.remove('hidden');
+    document.getElementById('metasAnoAtual').textContent = ANO_CORRENTE;
+    document.getElementById('metasMetaAnualClientes').textContent = METAS.anual.clientes;
+    renderAnualMeses();
+    renderAnualChart();
+  } else {
+    anualPanel.classList.add('hidden');
+  }
+
+  // Insights dinâmicos
   const insights = [];
-  if (pctLeads >= 100) insights.push({ ok:true, txt:`<strong>Volume de leads:</strong> meta atingida! Continue importando listas.` });
-  else if (pctLeads >= 70) insights.push({ ok:true, txt:`<strong>Volume de leads:</strong> ${Math.round(pctLeads)}% — você está no ritmo.` });
-  else insights.push({ ok:false, txt:`<strong>Volume de leads:</strong> ${Math.round(pctLeads)}% — aumente disparos ou importe novas listas.` });
-
-  if (pctTaxa >= 100) insights.push({ ok:true, txt:`<strong>Taxa de resposta:</strong> excelente, acima da meta!` });
-  else if (pctTaxa >= 70) insights.push({ ok:true, txt:`<strong>Taxa de resposta:</strong> ${atual.taxa}% — perto da meta de ${meta.taxa}%.` });
-  else insights.push({ ok:false, txt:`<strong>Taxa de resposta:</strong> ${atual.taxa}% — teste novas mensagens iniciais.` });
-
-  if (pctReun >= 100) insights.push({ ok:true, txt:`<strong>Reuniões:</strong> meta batida com folga.` });
-  else if (pctReun >= 70) insights.push({ ok:true, txt:`<strong>Reuniões:</strong> ${atual.reunioes}/${meta.reunioes} — bom progresso.` });
-  else insights.push({ ok:false, txt:`<strong>Reuniões:</strong> apenas ${atual.reunioes}/${meta.reunioes} — responda rápido aos interessados.` });
+  cards.forEach(c => {
+    const pct = Math.round(c.pct);
+    if (c.pct >= 100) insights.push({ ok:true, txt:`<strong>${c.label}:</strong> meta atingida! ${c.atual}${c.suffix} ≥ ${c.meta}${c.suffix}` });
+    else if (c.pct >= 70) insights.push({ ok:true, txt:`<strong>${c.label}:</strong> ${pct}% — no ritmo certo.` });
+    else insights.push({ ok:false, txt:`<strong>${c.label}:</strong> ${pct}% — atenção, está atrás do plano.` });
+  });
 
   document.getElementById('metasInsights').innerHTML = insights.map(i => `
     <div class="flex gap-2 items-start">
@@ -1744,6 +1872,97 @@ function renderMetas() {
   lucide.createIcons();
 }
 
+function renderAnualMeses() {
+  const metaMensalClientes = Math.ceil(METAS.anual.clientes / 12);
+  const grid = document.getElementById('metasAnoMeses');
+  grid.innerHTML = MESES_LABELS.map((mes, i) => {
+    let status, color, valor, pctMes;
+    if (i > MES_ATUAL) {
+      // futuro
+      status = 'Futuro'; color = 'bg-slate-100 text-slate-400 border-slate-200';
+      valor = '—'; pctMes = 0;
+    } else {
+      const h = HISTORICO_MENSAL[i] || { clientes: 0 };
+      valor = h.clientes;
+      pctMes = (h.clientes / metaMensalClientes) * 100;
+      if (pctMes >= 100) { status = 'Atingida'; color = 'bg-green-50 text-green-700 border-green-300'; }
+      else if (pctMes >= 70) { status = 'No ritmo'; color = 'bg-blue-50 text-trivium-blue border-blue-300'; }
+      else { status = 'Atrás'; color = 'bg-yellow-50 text-yellow-700 border-yellow-300'; }
+    }
+    const isAtual = i === MES_ATUAL ? 'ring-2 ring-trivium-blue ring-offset-1' : '';
+    return `
+      <div class="border rounded-lg p-2 text-center ${color} ${isAtual}">
+        <div class="text-[10px] uppercase font-semibold tracking-wide">${mes}</div>
+        <div class="text-lg font-bold mt-1">${valor}</div>
+        <div class="text-[9px] mt-0.5">de ${metaMensalClientes}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderAnualChart() {
+  const ctx = document.getElementById('anualChart');
+  if (!ctx) return;
+  if (anualChartInstance) anualChartInstance.destroy();
+
+  const metaAnualClientes = METAS.anual.clientes;
+  const metaMensal = metaAnualClientes / 12;
+
+  // Linha de meta acumulada (linear)
+  const metaAcum = MESES_LABELS.map((_, i) => Math.round(metaMensal * (i + 1)));
+
+  // Linha de realizado acumulado
+  let acum = 0;
+  const realizadoAcum = MESES_LABELS.map((_, i) => {
+    if (i > MES_ATUAL) return null;
+    acum += (HISTORICO_MENSAL[i]?.clientes || 0);
+    return acum;
+  });
+
+  anualChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: MESES_LABELS,
+      datasets: [
+        {
+          label: 'Meta acumulada',
+          data: metaAcum,
+          borderColor: '#94A3B8',
+          borderDash: [6,4],
+          backgroundColor: 'transparent',
+          tension: 0,
+          pointRadius: 0,
+          borderWidth: 2,
+        },
+        {
+          label: 'Realizado acumulado',
+          data: realizadoAcum,
+          borderColor: '#2563EB',
+          backgroundColor: 'rgba(37,99,235,0.1)',
+          fill: true,
+          tension: 0.35,
+          pointRadius: 4,
+          pointBackgroundColor: '#2563EB',
+          borderWidth: 2.5,
+          spanGaps: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'top', align: 'end', labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color:'#64748B', font:{size:11} } },
+        y: { grid: { color:'#F1F5F9' }, ticks: { color:'#64748B', font:{size:11} }, beginAtZero: true }
+      },
+      interaction: { intersect: false, mode: 'index' }
+    }
+  });
+}
+
 function openEditMetas() {
   document.getElementById('metaDiaLeads').value = METAS.diaria.leads;
   document.getElementById('metaDiaTaxa').value = METAS.diaria.taxa;
@@ -1751,6 +1970,11 @@ function openEditMetas() {
   document.getElementById('metaMesLeads').value = METAS.mensal.leads;
   document.getElementById('metaMesTaxa').value = METAS.mensal.taxa;
   document.getElementById('metaMesReunioes').value = METAS.mensal.reunioes;
+  document.getElementById('metaMesClientes').value = METAS.mensal.clientes;
+  document.getElementById('metaAnoLeads').value = METAS.anual.leads;
+  document.getElementById('metaAnoTaxa').value = METAS.anual.taxa;
+  document.getElementById('metaAnoReunioes').value = METAS.anual.reunioes;
+  document.getElementById('metaAnoClientes').value = METAS.anual.clientes;
   document.getElementById('editMetasModal').classList.remove('hidden');
   lucide.createIcons();
 }
@@ -1770,6 +1994,13 @@ function saveMetas() {
       leads: Number(document.getElementById('metaMesLeads').value) || 0,
       taxa: Number(document.getElementById('metaMesTaxa').value) || 0,
       reunioes: Number(document.getElementById('metaMesReunioes').value) || 0,
+      clientes: Number(document.getElementById('metaMesClientes').value) || 0,
+    },
+    anual: {
+      leads: Number(document.getElementById('metaAnoLeads').value) || 0,
+      taxa: Number(document.getElementById('metaAnoTaxa').value) || 0,
+      reunioes: Number(document.getElementById('metaAnoReunioes').value) || 0,
+      clientes: Number(document.getElementById('metaAnoClientes').value) || 0,
     },
   };
   localStorage.setItem('triv_metas', JSON.stringify(METAS));
