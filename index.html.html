@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Trivium · Crescimento movido por inteligência</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Poppins', 'sans-serif'] },
+        colors: {
+          trivium: {
+            900: '#0D1321',
+            800: '#111827',
+            700: '#1F2937',
+            blue: '#2563EB',
+            'blue-light': '#3B82F6',
+            'blue-dark': '#1D4ED8',
+            slate: '#334155',
+            muted: '#64748B',
+            light: '#E2E8F0',
+          },
+        },
+      },
+    },
+  };
+</script>
+<style>
+  body { font-family: 'Poppins', sans-serif; -webkit-font-smoothing: antialiased; }
+  .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  .fade-in { animation: fadeIn 0.25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .draggable { cursor: grab; user-select: none; }
+  .draggable:active { cursor: grabbing; }
+  .drag-over { background: #DBEAFE !important; border: 2px dashed #2563EB !important; }
+  .pulse-dot { animation: pulse 2s infinite; }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
+    50% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+  }
+  .gradient-blue { background: linear-gradient(135deg, #2563EB 0%, #3B82F6 50%, #1D4ED8 100%); }
+  .gradient-dark { background: linear-gradient(180deg, #0D1321 0%, #111827 100%); }
+</style>
+</head>
+<body class="bg-slate-50">
+
+<!-- ============================================ -->
+<!-- LOGO SVG (reutilizável)                      -->
+<!-- ============================================ -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="trivLogo" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="trivLogoDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#64748B"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<template id="logo-tpl">
+  <svg viewBox="0 0 64 64" class="w-full h-full">
+    <path d="M4 8 L60 8 L52 22 L40 22 L40 56 L24 56 L24 22 L12 22 Z" fill="url(#trivLogo)"/>
+    <path d="M40 22 L40 56 L24 56 L24 38 Z" fill="url(#trivLogoDark)" opacity="0.6"/>
+  </svg>
+</template>
+
+<!-- ============================================ -->
+<!-- CONFIG MODAL (Supabase keys)                 -->
+<!-- ============================================ -->
+<div id="configModal" class="hidden fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4">
+  <div class="bg-white rounded-xl max-w-lg w-full p-6">
+    <div class="w-12 h-12 mb-4"><svg viewBox="0 0 64 64" class="w-full h-full"><path d="M4 8 L60 8 L52 22 L40 22 L40 56 L24 56 L24 22 L12 22 Z" fill="url(#trivLogo)"/><path d="M40 22 L40 56 L24 56 L24 38 Z" fill="url(#trivLogoDark)" opacity="0.6"/></svg></div>
+    <h3 class="text-xl font-bold mb-1">Conectar Supabase</h3>
+    <p class="text-sm text-slate-500 mb-5">Cole as chaves do seu projeto Supabase pra ativar o login real. Encontre em: Settings → API.</p>
+    <div class="space-y-3">
+      <div>
+        <label class="text-sm font-medium block mb-1">Project URL</label>
+        <input id="cfgUrl" placeholder="https://xxxxx.supabase.co" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono" />
+      </div>
+      <div>
+        <label class="text-sm font-medium block mb-1">Anon (public) Key</label>
+        <input id="cfgKey" placeholder="eyJhbGciOi..." class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono" />
+      </div>
+      <p id="cfgErr" class="text-xs text-red-600 hidden"></p>
+    </div>
+    <div class="flex gap-2 mt-5">
+      <button onclick="useDemoMode()" class="flex-1 border border-slate-200 px-4 py-2 rounded-lg text-sm">Usar modo demo</button>
+      <button onclick="saveConfig()" class="flex-1 bg-trivium-blue text-white px-4 py-2 rounded-lg text-sm font-medium">Conectar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- LOGIN SCREEN                                  -->
+<!-- ============================================ -->
+<div id="screen-login" class="min-h-screen flex bg-trivium-900">
+  <div class="w-full lg:w-1/2 flex items-center justify-center p-8">
+    <div class="w-full max-w-sm">
+      <div class="flex items-center justify-between mb-12">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10"><svg viewBox="0 0 64 64" class="w-full h-full"><path d="M4 8 L60 8 L52 22 L40 22 L40 56 L24 56 L24 22 L12 22 Z" fill="url(#trivLogo)"/><path d="M40 22 L40 56 L24 56 L24 38 Z" fill="url(#trivLogoDark)" opacity="0.6"/></svg></div>
+          <span class="text-2xl font-bold text-white tracking-tight">TRIVIUM</span>
+        </div>
+        <button onclick="openConfig()" class="text-xs text-slate-400 hover:text-white flex items-center gap-1" title="Configurar Supabase"><i data-lucide="settings" class="w-3.5 h-3.5"></i><span id="cfgStatus">Demo</span></button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex gap-1 bg-trivium-800/50 p-1 rounded-lg mb-6">
+        <button onclick="switchAuthTab('login')" data-tab="login" class="auth-tab flex-1 py-1.5 rounded-md text-sm font-medium transition">Entrar</button>
+        <button onclick="switchAuthTab('signup')" data-tab="signup" class="auth-tab flex-1 py-1.5 rounded-md text-sm font-medium transition">Cadastrar</button>
+        <button onclick="switchAuthTab('recover')" data-tab="recover" class="auth-tab flex-1 py-1.5 rounded-md text-sm font-medium transition">Recuperar</button>
+      </div>
+
+      <!-- LOGIN -->
+      <form id="form-login" onsubmit="event.preventDefault(); doLogin();" class="auth-form space-y-4">
+        <h1 class="text-2xl font-bold text-white mb-1">Bem-vindo de volta</h1>
+        <p class="text-slate-400 text-sm mb-4">Entre na sua conta Trivium</p>
+        <div>
+          <label class="text-sm text-slate-300 block mb-1.5">Email</label>
+          <input id="loginEmail" type="email" placeholder="seu@email.com" required class="w-full bg-trivium-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-trivium-blue focus:ring-2 focus:ring-trivium-blue/20" />
+        </div>
+        <div>
+          <label class="text-sm text-slate-300 block mb-1.5">Senha</label>
+          <input id="loginPw" type="password" placeholder="••••••••" required class="w-full bg-trivium-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-trivium-blue focus:ring-2 focus:ring-trivium-blue/20" />
+        </div>
+        <p id="loginErr" class="text-sm text-red-400 hidden"></p>
+        <button type="submit" id="loginBtn" class="w-full gradient-blue text-white font-semibold py-3 rounded-lg hover:opacity-90 transition shadow-lg shadow-blue-900/30">Entrar</button>
+        <p class="text-xs text-slate-500 text-center pt-2">Em modo demo, qualquer email/senha funciona.</p>
+      </form>
+
+      <!-- SIGNUP -->
+      <form id="form-signup" onsubmit="event.preventDefault(); doSignup();" class="auth-form hidden space-y-4">
+        <h1 class="text-2xl font-bold text-white mb-1">Criar sua conta</h1>
+        <p class="text-slate-400 text-sm mb-4">7 dias grátis · sem cartão</p>
+        <div>
+          <label class="text-sm text-slate-300 block mb-1.5">Seu nome</label>
+          <input id="signupName" type="text" required placeholder="Igor Lima" class="w-full bg-trivium-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-trivium-blue focus:ring-2 focus:ring-trivium-blue/20" />
+        </div>
+        <div>
+          <label class="text-sm text-slate-300 block mb-1.5">Email</label>
+          <input id="signupEmail" type="email" required placeholder="seu@email.com" class="w-full bg-trivium-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-trivium-blue focus:ring-2 focus:ring-trivium-blue/20" />
+        </div>
+        <div>
+          <label class="text-sm text-slate-300 block mb-1.5">Senha</label>
+          <input id="signupPw" type="password" required minlength="6" placeholder="mínimo 6 caracteres" class="w-full bg-trivium-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-trivium-blue focus:ring-2 focus:ring-trivium-blue/20" />
+        </div>
+        <p id="signupErr" class="text-sm text-red-400 hidden"></p>
+        <p id="signupOk" class="text-sm text-green-400 hidden"></p>
+        <button type="submit" id="signupBtn" class="w-full gradient-blue text-white font-semibold py-3 rounded-lg hover:opacity-90 transition">Criar conta</button>
+      </form>
+
+      <!-- RECOVER -->
+      <form id="form-recover" onsubmit="event.preventDefault(); doRecover();" class="auth-form hidden space-y-4">
+        <h1 class="text-2xl font-bold text-white mb-1">Recuperar senha</h1>
+        <p class="text-slate-400 text-sm mb-4">Vamos enviar um link de redefinição</p>
+        <div>
+          <label class="text-sm text-slate-300 block mb-1.5">Email</label>
+          <input id="recoverEmail" type="email" required placeholder="seu@email.com" class="w-full bg-trivium-800 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-trivium-blue focus:ring-2 focus:ring-trivium-blue/20" />
+        </div>
+        <p id="recoverErr" class="text-sm text-red-400 hidden"></p>
+        <p id="recoverOk" class="text-sm text-green-400 hidden"></p>
+        <button type="submit" id="recoverBtn" class="w-full gradient-blue text-white font-semibold py-3 rounded-lg hover:opacity-90 transition">Enviar link</button>
+      </form>
+    </div>
+  </div>
+  <div class="hidden lg:flex w-1/2 bg-trivium-900 relative overflow-hidden items-center justify-center p-12">
+    <div class="absolute inset-0 opacity-30" style="background-image: radial-gradient(circle at 25% 25%, #2563EB 0%, transparent 50%), radial-gradient(circle at 75% 75%, #1D4ED8 0%, transparent 50%);"></div>
+    <div class="relative z-10 text-white max-w-md">
+      <div class="w-20 h-20 mb-8"><svg viewBox="0 0 64 64" class="w-full h-full"><path d="M4 8 L60 8 L52 22 L40 22 L40 56 L24 56 L24 22 L12 22 Z" fill="url(#trivLogo)"/><path d="M40 22 L40 56 L24 56 L24 38 Z" fill="url(#trivLogoDark)" opacity="0.6"/></svg></div>
+      <h2 class="text-4xl font-bold mb-4 leading-tight">Crescimento movido por inteligência</h2>
+      <p class="text-slate-300 text-lg leading-relaxed mb-8">Automação comercial inteligente para gerar mais leads, mais conversas e mais clientes pro seu negócio.</p>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="bg-white/5 backdrop-blur border border-white/10 rounded-lg p-4">
+          <div class="text-2xl font-bold text-trivium-blue-light">2.456</div>
+          <div class="text-xs text-slate-400">Leads ativos</div>
+        </div>
+        <div class="bg-white/5 backdrop-blur border border-white/10 rounded-lg p-4">
+          <div class="text-2xl font-bold text-trivium-blue-light">98%</div>
+          <div class="text-xs text-slate-400">Entrega</div>
+        </div>
+        <div class="bg-white/5 backdrop-blur border border-white/10 rounded-lg p-4">
+          <div class="text-2xl font-bold text-trivium-blue-light">23%</div>
+          <div class="text-xs text-slate-400">Conversão</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- APP SHELL                                    -->
+<!-- ============================================ -->
+<div id="screen-app" class="hidden h-screen flex bg-slate-50">
+
+  <!-- SIDEBAR -->
+  <aside class="w-60 gradient-dark text-white flex flex-col border-r border-slate-800">
+    <div class="p-5 border-b border-slate-800/50">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8"><svg viewBox="0 0 64 64" class="w-full h-full"><path d="M4 8 L60 8 L52 22 L40 22 L40 56 L24 56 L24 22 L12 22 Z" fill="url(#trivLogo)"/><path d="M40 22 L40 56 L24 56 L24 38 Z" fill="url(#trivLogoDark)" opacity="0.6"/></svg></div>
+        <span class="text-lg font-bold tracking-tight">TRIVIUM</span>
+      </div>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-0.5 scrollbar-thin overflow-y-auto">
+      <button onclick="goTo('dashboard')" data-nav="dashboard" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Dashboard</span>
+      </button>
+      <button onclick="goTo('leads')" data-nav="leads" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
+        <i data-lucide="users" class="w-4 h-4"></i><span>Leads</span>
+        <span class="ml-auto text-xs bg-trivium-blue/20 text-trivium-blue-light px-1.5 py-0.5 rounded">2.4k</span>
+      </button>
+      <button onclick="goTo('kanban')" data-nav="kanban" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
+        <i data-lucide="layout-grid" class="w-4 h-4"></i><span>Funil (Kanban)</span>
+      </button>
+      <button onclick="goTo('inbox')" data-nav="inbox" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
+        <i data-lucide="inbox" class="w-4 h-4"></i><span>Caixa de entrada</span>
+        <span class="ml-auto w-2 h-2 bg-red-500 rounded-full pulse-dot"></span>
+      </button>
+      <div class="pt-4 pb-1.5 px-3"><span class="text-[10px] uppercase font-semibold tracking-widest text-slate-500">Captação</span></div>
+      <button onclick="goTo('importar')" data-nav="importar" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
+        <i data-lucide="upload-cloud" class="w-4 h-4"></i><span>Importar lista</span>
+      </button>
+      <button onclick="goTo('campanhas')" data-nav="campanhas" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
+        <i data-lucide="send" class="w-4 h-4"></i><span>Campanhas</span>
+      </button>
+      <button onclick="goTo('templates')" data-nav="templates" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
+        <i data-lucide="message-square-text" class="w-4 h-4"></i><span>Templates</span>
+      </button>
+      <div class="pt-4 pb-1.5 px-3"><span class="text-[10px] uppercase font-semibold tracking-widest text-slate-500">Sistema</span></div>
+      <button onclick="goTo('whatsapp')" data-nav="whatsapp" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
+        <i data-lucide="smartphone" class="w-4 h-4"></i><span>WhatsApp</span>
+        <span class="ml-auto w-2 h-2 bg-green-500 rounded-full"></span>
+      </button>
+      <button onclick="goTo('config')" data-nav="config" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
+        <i data-lucide="settings" class="w-4 h-4"></i><span>Configurações</span>
+      </button>
+    </nav>
+    <div class="p-3 border-t border-slate-800/50">
+      <div class="flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg cursor-pointer transition">
+        <div class="w-9 h-9 rounded-full gradient-blue flex items-center justify-center font-semibold text-sm">IG</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-medium truncate">Igor Lima</div>
+          <div class="text-xs text-slate-400 truncate">Plano Trial · 5 dias</div>
+        </div>
+        <button onclick="logout()" class="text-slate-400 hover:text-white"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN AREA -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+
+    <!-- TOPBAR -->
+    <header class="h-16 bg-white border-b border-slate-200 flex items-center px-6 gap-4">
+      <div class="flex-1 max-w-md relative">
+        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input placeholder="Buscar lead, campanha, mensagem..." class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:bg-white focus:border-trivium-blue focus:outline-none focus:ring-2 focus:ring-trivium-blue/10" />
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="relative p-2 hover:bg-slate-100 rounded-lg">
+          <i data-lucide="bell" class="w-5 h-5 text-slate-600"></i>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+        </button>
+        <button class="px-3 py-1.5 bg-trivium-blue/10 text-trivium-blue rounded-lg text-sm font-medium hover:bg-trivium-blue/20">
+          <i data-lucide="zap" class="w-3.5 h-3.5 inline mr-1"></i>Upgrade
+        </button>
+      </div>
+    </header>
+
+    <!-- PAGE CONTENT -->
+    <main id="page-content" class="flex-1 overflow-y-auto scrollbar-thin">
+
+      <!-- ============ DASHBOARD ============ -->
+      <section data-page="dashboard" class="page p-8 fade-in">
+        <div class="flex items-end justify-between mb-8">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900">Olá, Igor 👋</h1>
+            <p class="text-slate-500 text-sm mt-1">Aqui está o resumo do seu negócio hoje</p>
+          </div>
+          <div class="flex gap-2">
+            <select class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              <option>Últimos 30 dias</option><option>Últimos 7 dias</option><option>Hoje</option>
+            </select>
+            <button onclick="goTo('campanhas')" class="bg-trivium-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-trivium-blue-dark flex items-center gap-2">
+              <i data-lucide="plus" class="w-4 h-4"></i>Nova campanha
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI cards -->
+        <div class="grid grid-cols-4 gap-4 mb-6">
+          <div class="bg-white rounded-xl p-5 border border-slate-200 hover:shadow-sm transition">
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center"><i data-lucide="users" class="w-5 h-5 text-trivium-blue"></i></div>
+              <span class="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">+18%</span>
+            </div>
+            <div class="text-2xl font-bold text-slate-900">2.456</div>
+            <div class="text-xs text-slate-500 mt-0.5">Leads ativos</div>
+          </div>
+          <div class="bg-white rounded-xl p-5 border border-slate-200 hover:shadow-sm transition">
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center"><i data-lucide="message-circle" class="w-5 h-5 text-purple-600"></i></div>
+              <span class="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">+24%</span>
+            </div>
+            <div class="text-2xl font-bold text-slate-900">1.289</div>
+            <div class="text-xs text-slate-500 mt-0.5">Conversas iniciadas</div>
+          </div>
+          <div class="bg-white rounded-xl p-5 border border-slate-200 hover:shadow-sm transition">
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center"><i data-lucide="calendar-check" class="w-5 h-5 text-orange-600"></i></div>
+              <span class="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">+12%</span>
+            </div>
+            <div class="text-2xl font-bold text-slate-900">87</div>
+            <div class="text-xs text-slate-500 mt-0.5">Reuniões marcadas</div>
+          </div>
+          <div class="bg-white rounded-xl p-5 border border-slate-200 hover:shadow-sm transition">
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center"><i data-lucide="trending-up" class="w-5 h-5 text-green-600"></i></div>
+              <span class="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">+5%</span>
+            </div>
+            <div class="text-2xl font-bold text-slate-900">23%</div>
+            <div class="text-xs text-slate-500 mt-0.5">Taxa de conversão</div>
+          </div>
+        </div>
+
+        <!-- Chart + Origens -->
+        <div class="grid grid-cols-3 gap-6 mb-6">
+          <div class="col-span-2 bg-white rounded-xl border border-slate-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="font-semibold text-slate-900">Atividade dos últimos 30 dias</h3>
+                <p class="text-xs text-slate-500 mt-0.5">Mensagens enviadas vs respostas recebidas</p>
+              </div>
+              <div class="flex gap-3 text-xs">
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-trivium-blue rounded-full"></span>Enviadas</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-purple-500 rounded-full"></span>Respostas</span>
+              </div>
+            </div>
+            <div class="h-56"><canvas id="dashChart"></canvas></div>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 p-6">
+            <h3 class="font-semibold text-slate-900 mb-1">Origem dos leads</h3>
+            <p class="text-xs text-slate-500 mb-5">Distribuição da base atual</p>
+            <div class="space-y-3.5">
+              <div>
+                <div class="flex justify-between text-sm mb-1.5"><span class="font-medium">Importação Excel</span><span class="text-slate-500">1.248</span></div>
+                <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-trivium-blue rounded-full" style="width:62%"></div></div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1.5"><span class="font-medium">Google Places</span><span class="text-slate-500">806</span></div>
+                <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-purple-500 rounded-full" style="width:40%"></div></div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1.5"><span class="font-medium">Indicação</span><span class="text-slate-500">234</span></div>
+                <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-orange-500 rounded-full" style="width:12%"></div></div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1.5"><span class="font-medium">Parceiros</span><span class="text-slate-500">98</span></div>
+                <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-green-500 rounded-full" style="width:8%"></div></div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1.5"><span class="font-medium">Outros</span><span class="text-slate-500">70</span></div>
+                <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-slate-400 rounded-full" style="width:6%"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent activity + upcoming meetings -->
+        <div class="grid grid-cols-2 gap-6">
+          <div class="bg-white rounded-xl border border-slate-200">
+            <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+              <h3 class="font-semibold text-slate-900">Atividade recente</h3>
+              <button onclick="goTo('inbox')" class="text-xs text-trivium-blue hover:underline">Ver tudo →</button>
+            </div>
+            <div class="divide-y divide-slate-100">
+              <div class="p-4 flex items-start gap-3 hover:bg-slate-50 cursor-pointer">
+                <div class="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-medium text-sm flex-shrink-0">CV</div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between"><span class="font-medium text-sm">Clínica Vida Plena</span><span class="text-xs text-slate-400">há 12min</span></div>
+                  <p class="text-sm text-slate-600 mt-0.5">Tem interesse sim. Pode me passar mais detalhes?</p>
+                  <span class="inline-block mt-1.5 text-[10px] font-semibold uppercase tracking-wide text-green-700 bg-green-100 px-1.5 py-0.5 rounded">Interessado</span>
+                </div>
+              </div>
+              <div class="p-4 flex items-start gap-3 hover:bg-slate-50 cursor-pointer">
+                <div class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-medium text-sm flex-shrink-0">DR</div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between"><span class="font-medium text-sm">Dra. Renata Cardiologista</span><span class="text-xs text-slate-400">há 38min</span></div>
+                  <p class="text-sm text-slate-600 mt-0.5">Reunião agendada para amanhã às 14h</p>
+                  <span class="inline-block mt-1.5 text-[10px] font-semibold uppercase tracking-wide text-orange-700 bg-orange-100 px-1.5 py-0.5 rounded">Reunião</span>
+                </div>
+              </div>
+              <div class="p-4 flex items-start gap-3 hover:bg-slate-50 cursor-pointer">
+                <div class="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-medium text-sm flex-shrink-0">AS</div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between"><span class="font-medium text-sm">Advocacia Silva & Pereira</span><span class="text-xs text-slate-400">há 1h</span></div>
+                  <p class="text-sm text-slate-600 mt-0.5">Quanto custa o serviço mensal?</p>
+                  <span class="inline-block mt-1.5 text-[10px] font-semibold uppercase tracking-wide text-yellow-700 bg-yellow-100 px-1.5 py-0.5 rounded">Dúvida</span>
+                </div>
+              </div>
+              <div class="p-4 flex items-start gap-3 hover:bg-slate-50 cursor-pointer">
+                <div class="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center text-orange-700 font-medium text-sm flex-shrink-0">PE</div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between"><span class="font-medium text-sm">Padaria do Edu</span><span class="text-xs text-slate-400">há 2h</span></div>
+                  <p class="text-sm text-slate-600 mt-0.5">Já tenho contador, mas pode me mandar proposta</p>
+                  <span class="inline-block mt-1.5 text-[10px] font-semibold uppercase tracking-wide text-green-700 bg-green-100 px-1.5 py-0.5 rounded">Interessado</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl border border-slate-200">
+            <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+              <h3 class="font-semibold text-slate-900">Próximas reuniões</h3>
+              <span class="text-xs text-slate-500">5 agendadas</span>
+            </div>
+            <div class="divide-y divide-slate-100">
+              <div class="p-4 hover:bg-slate-50">
+                <div class="flex items-center justify-between mb-1.5"><span class="font-medium text-sm">Dra. Renata Cardiologista</span><span class="text-xs font-semibold text-trivium-blue">Amanhã, 14:00</span></div>
+                <div class="flex items-center gap-2 text-xs text-slate-500"><i data-lucide="video" class="w-3 h-3"></i>Google Meet · 30min</div>
+              </div>
+              <div class="p-4 hover:bg-slate-50">
+                <div class="flex items-center justify-between mb-1.5"><span class="font-medium text-sm">Clínica Vida Plena</span><span class="text-xs font-semibold text-slate-700">Sex, 10:30</span></div>
+                <div class="flex items-center gap-2 text-xs text-slate-500"><i data-lucide="phone" class="w-3 h-3"></i>Ligação · 20min</div>
+              </div>
+              <div class="p-4 hover:bg-slate-50">
+                <div class="flex items-center justify-between mb-1.5"><span class="font-medium text-sm">Padaria do Edu</span><span class="text-xs font-semibold text-slate-700">Seg, 16:00</span></div>
+                <div class="flex items-center gap-2 text-xs text-slate-500"><i data-lucide="map-pin" class="w-3 h-3"></i>Presencial · 45min</div>
+              </div>
+              <div class="p-4 hover:bg-slate-50">
+                <div class="flex items-center justify-between mb-1.5"><span class="font-medium text-sm">Estúdio Pilates Bella</span><span class="text-xs font-semibold text-slate-700">Ter, 09:00</span></div>
+                <div class="flex items-center gap-2 text-xs text-slate-500"><i data-lucide="video" class="w-3 h-3"></i>Zoom · 30min</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ LEADS ============ -->
+      <section data-page="leads" class="page hidden p-8 fade-in">
+        <div class="flex items-end justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900">Leads</h1>
+            <p class="text-slate-500 text-sm mt-1">2.456 leads · 1.984 aptos para WhatsApp</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="goTo('importar')" class="bg-white border border-slate-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 flex items-center gap-2">
+              <i data-lucide="upload" class="w-4 h-4"></i>Importar
+            </button>
+            <button class="bg-trivium-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-trivium-blue-dark flex items-center gap-2">
+              <i data-lucide="plus" class="w-4 h-4"></i>Novo lead
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-xl">
+          <div class="p-4 border-b border-slate-100 flex items-center gap-3 flex-wrap">
+            <div class="relative flex-1 min-w-[240px]">
+              <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+              <input placeholder="Buscar empresa, cidade ou telefone..." class="w-full border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:border-trivium-blue focus:outline-none focus:ring-2 focus:ring-trivium-blue/10" />
+            </div>
+            <select class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              <option>Todos os status</option><option>Novo</option><option>Contatado</option><option>Respondeu</option><option>Reunião</option>
+            </select>
+            <select class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              <option>Todos os segmentos</option><option>Médicos</option><option>Advogados</option><option>Clínicas</option>
+            </select>
+            <select class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              <option>Todas as origens</option><option>Manual</option><option>Google</option><option>Parceiro</option>
+            </select>
+            <button class="border border-slate-200 px-3 py-2 rounded-lg text-sm hover:bg-slate-50">
+              <i data-lucide="filter" class="w-4 h-4 inline mr-1"></i>Mais filtros
+            </button>
+          </div>
+
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-xs uppercase tracking-wider text-slate-500 border-b border-slate-100">
+                <th class="px-4 py-3 font-semibold"><input type="checkbox" /></th>
+                <th class="px-4 py-3 font-semibold">Empresa</th>
+                <th class="px-4 py-3 font-semibold">Telefone</th>
+                <th class="px-4 py-3 font-semibold">Cidade</th>
+                <th class="px-4 py-3 font-semibold">Segmento</th>
+                <th class="px-4 py-3 font-semibold">Origem</th>
+                <th class="px-4 py-3 font-semibold">Status</th>
+                <th class="px-4 py-3 font-semibold">Último contato</th>
+              </tr>
+            </thead>
+            <tbody id="leadsTable" class="divide-y divide-slate-100"></tbody>
+          </table>
+
+          <div class="p-4 border-t border-slate-100 flex items-center justify-between text-sm text-slate-500">
+            <span>Mostrando 1-12 de 2.456</span>
+            <div class="flex gap-1">
+              <button class="px-3 py-1 border border-slate-200 rounded hover:bg-slate-50">Anterior</button>
+              <button class="px-3 py-1 bg-trivium-blue text-white rounded">1</button>
+              <button class="px-3 py-1 border border-slate-200 rounded hover:bg-slate-50">2</button>
+              <button class="px-3 py-1 border border-slate-200 rounded hover:bg-slate-50">3</button>
+              <button class="px-3 py-1 border border-slate-200 rounded hover:bg-slate-50">Próximo</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ KANBAN ============ -->
+      <section data-page="kanban" class="page hidden p-8 fade-in">
+        <div class="flex items-end justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900">Funil de vendas</h1>
+            <p class="text-slate-500 text-sm mt-1">Arraste os cards entre as colunas para mover o lead</p>
+          </div>
+          <button onclick="goTo('leads')" class="text-sm text-slate-600 hover:text-slate-900">Ver como tabela →</button>
+        </div>
+
+        <div id="kanbanBoard" class="grid grid-cols-6 gap-4"></div>
+      </section>
+
+      <!-- ============ INBOX ============ -->
+      <section data-page="inbox" class="page hidden p-8 fade-in">
+        <div class="flex items-end justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900">Caixa de entrada</h1>
+            <p class="text-slate-500 text-sm mt-1">Respostas dos leads em tempo real</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="bg-white border border-slate-200 px-3 py-2 rounded-lg text-sm">Todos (24)</button>
+            <button class="bg-green-50 text-green-700 border border-green-200 px-3 py-2 rounded-lg text-sm font-medium">Interessados (8)</button>
+            <button class="bg-yellow-50 text-yellow-700 border border-yellow-200 px-3 py-2 rounded-lg text-sm font-medium">Dúvidas (5)</button>
+          </div>
+        </div>
+        <div id="inboxList" class="space-y-2"></div>
+      </section>
+
+      <!-- ============ IMPORTAR ============ -->
+      <section data-page="importar" class="page hidden p-8 fade-in">
+        <div class="max-w-4xl">
+          <h1 class="text-2xl font-bold text-slate-900 mb-1">Importar lista de leads</h1>
+          <p class="text-slate-500 text-sm mb-8">Suba um arquivo Excel (.xlsx) com seus contatos. O sistema limpa, valida e organiza automaticamente.</p>
+
+          <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-5">
+              <i data-lucide="download-cloud" class="w-8 h-8 text-trivium-blue mb-3"></i>
+              <h3 class="font-semibold text-slate-900 mb-1">1. Baixe o modelo</h3>
+              <p class="text-sm text-slate-600 mb-3">Planilha com as colunas certas e exemplos preenchidos</p>
+              <button class="text-sm font-medium text-trivium-blue hover:underline">Baixar modelo.xlsx →</button>
+            </div>
+            <div class="bg-purple-50 border border-purple-200 rounded-xl p-5">
+              <i data-lucide="edit-3" class="w-8 h-8 text-purple-600 mb-3"></i>
+              <h3 class="font-semibold text-slate-900 mb-1">2. Preencha os dados</h3>
+              <p class="text-sm text-slate-600">Nome da empresa, telefone, cidade, segmento e mais</p>
+            </div>
+            <div class="bg-green-50 border border-green-200 rounded-xl p-5">
+              <i data-lucide="upload-cloud" class="w-8 h-8 text-green-600 mb-3"></i>
+              <h3 class="font-semibold text-slate-900 mb-1">3. Faça upload</h3>
+              <p class="text-sm text-slate-600">Arraste o arquivo abaixo. Limpamos e validamos tudo.</p>
+            </div>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-xl p-6 mb-6">
+            <label class="text-sm font-medium text-slate-700 block mb-2">Origem dos leads</label>
+            <div class="grid grid-cols-5 gap-2 mb-6">
+              <button class="origem-btn border-2 border-trivium-blue bg-blue-50 text-trivium-blue px-3 py-2.5 rounded-lg text-sm font-medium">Manual</button>
+              <button class="origem-btn border border-slate-200 px-3 py-2.5 rounded-lg text-sm hover:border-slate-300">Google</button>
+              <button class="origem-btn border border-slate-200 px-3 py-2.5 rounded-lg text-sm hover:border-slate-300">Instagram</button>
+              <button class="origem-btn border border-slate-200 px-3 py-2.5 rounded-lg text-sm hover:border-slate-300">Parceiro</button>
+              <button class="origem-btn border border-slate-200 px-3 py-2.5 rounded-lg text-sm hover:border-slate-300">Base antiga</button>
+            </div>
+
+            <div id="dropzone" class="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center hover:border-trivium-blue hover:bg-blue-50/30 transition cursor-pointer">
+              <div class="w-16 h-16 mx-auto rounded-full bg-blue-50 flex items-center justify-center mb-4">
+                <i data-lucide="upload-cloud" class="w-8 h-8 text-trivium-blue"></i>
+              </div>
+              <h3 class="font-semibold text-slate-900 mb-1">Arraste seu arquivo aqui</h3>
+              <p class="text-sm text-slate-500 mb-4">ou clique para selecionar (apenas .xlsx, máx 10MB)</p>
+              <button onclick="simulateImport()" class="bg-trivium-blue text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-trivium-blue-dark">
+                Selecionar arquivo
+              </button>
+            </div>
+          </div>
+
+          <div id="importResult" class="hidden bg-white border border-slate-200 rounded-xl p-6">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                <i data-lucide="check" class="w-5 h-5 text-green-600"></i>
+              </div>
+              <div>
+                <h3 class="font-semibold text-slate-900">Importação concluída!</h3>
+                <p class="text-xs text-slate-500">leads_medicos_sp.xlsx · há alguns segundos</p>
+              </div>
+            </div>
+            <div class="grid grid-cols-4 gap-3 mb-5">
+              <div class="bg-slate-50 rounded-lg p-3 text-center"><div class="text-2xl font-bold">500</div><div class="text-xs text-slate-500">Total no arquivo</div></div>
+              <div class="bg-green-50 rounded-lg p-3 text-center"><div class="text-2xl font-bold text-green-700">420</div><div class="text-xs text-slate-500">Importados</div></div>
+              <div class="bg-yellow-50 rounded-lg p-3 text-center"><div class="text-2xl font-bold text-yellow-700">50</div><div class="text-xs text-slate-500">Duplicados</div></div>
+              <div class="bg-red-50 rounded-lg p-3 text-center"><div class="text-2xl font-bold text-red-700">30</div><div class="text-xs text-slate-500">Inválidos</div></div>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="goTo('leads')" class="bg-trivium-blue text-white px-4 py-2 rounded-lg text-sm font-medium">Ver leads importados</button>
+              <button onclick="goTo('campanhas')" class="bg-white border border-slate-200 px-4 py-2 rounded-lg text-sm">Criar campanha</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CAMPANHAS ============ -->
+      <section data-page="campanhas" class="page hidden p-8 fade-in">
+        <div class="flex items-end justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900">Campanhas</h1>
+            <p class="text-slate-500 text-sm mt-1">Crie disparos em massa com horário e segmentação</p>
+          </div>
+          <button onclick="document.getElementById('newCampaignModal').classList.remove('hidden')" class="bg-trivium-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-trivium-blue-dark flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i>Nova campanha
+          </button>
+        </div>
+
+        <div id="campanhasList" class="space-y-3"></div>
+      </section>
+
+      <!-- ============ TEMPLATES ============ -->
+      <section data-page="templates" class="page hidden p-8 fade-in">
+        <div class="flex items-end justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900">Templates de mensagem</h1>
+            <p class="text-slate-500 text-sm mt-1">Modelos com variáveis automáticas e múltiplas versões anti-ban</p>
+          </div>
+          <button class="bg-trivium-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-trivium-blue-dark flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i>Novo template
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4" id="templatesList"></div>
+      </section>
+
+      <!-- ============ WHATSAPP ============ -->
+      <section data-page="whatsapp" class="page hidden p-8 fade-in">
+        <h1 class="text-2xl font-bold text-slate-900 mb-1">WhatsApp</h1>
+        <p class="text-slate-500 text-sm mb-8">Conecte e gerencie seus números</p>
+
+        <div class="grid grid-cols-3 gap-6 max-w-5xl">
+          <div class="col-span-2 bg-white border border-slate-200 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-5">
+              <h3 class="font-semibold text-slate-900">Sessões conectadas</h3>
+              <button class="text-sm text-trivium-blue hover:underline">+ Nova sessão</button>
+            </div>
+            <div class="space-y-3">
+              <div class="border border-slate-200 rounded-lg p-4 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center"><i data-lucide="smartphone" class="w-6 h-6 text-green-700"></i></div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2"><span class="font-medium">WhatsApp Principal</span><span class="text-xs text-green-700 bg-green-100 px-2 py-0.5 rounded-full">Conectado</span></div>
+                  <div class="text-sm text-slate-500 mt-0.5">+55 11 99876-5432 · 87 mensagens hoje</div>
+                </div>
+                <button class="p-2 hover:bg-slate-100 rounded-lg"><i data-lucide="more-vertical" class="w-4 h-4 text-slate-500"></i></button>
+              </div>
+              <div class="border border-slate-200 rounded-lg p-4 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-lg bg-yellow-100 flex items-center justify-center"><i data-lucide="smartphone" class="w-6 h-6 text-yellow-700"></i></div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2"><span class="font-medium">Backup</span><span class="text-xs text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full">Aguardando QR</span></div>
+                  <div class="text-sm text-slate-500 mt-0.5">Escaneie o QR Code ao lado</div>
+                </div>
+                <button class="p-2 hover:bg-slate-100 rounded-lg"><i data-lucide="x" class="w-4 h-4 text-slate-500"></i></button>
+              </div>
+            </div>
+
+            <div class="mt-6 pt-6 border-t border-slate-100">
+              <h4 class="font-semibold text-slate-900 mb-3 text-sm">Limites e segurança</h4>
+              <div class="grid grid-cols-3 gap-3">
+                <div class="border border-slate-200 rounded-lg p-3">
+                  <div class="text-xs text-slate-500 mb-1">Hoje</div>
+                  <div class="text-lg font-bold">87/100</div>
+                  <div class="h-1.5 bg-slate-100 rounded-full mt-2 overflow-hidden"><div class="h-full bg-trivium-blue rounded-full" style="width:87%"></div></div>
+                </div>
+                <div class="border border-slate-200 rounded-lg p-3">
+                  <div class="text-xs text-slate-500 mb-1">Intervalo</div>
+                  <div class="text-lg font-bold">30-90s</div>
+                  <div class="text-xs text-green-600 mt-2">✓ Anti-ban ativo</div>
+                </div>
+                <div class="border border-slate-200 rounded-lg p-3">
+                  <div class="text-xs text-slate-500 mb-1">Horário</div>
+                  <div class="text-lg font-bold">9-18h</div>
+                  <div class="text-xs text-slate-500 mt-2">Seg a sex</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-xl p-6 text-center">
+            <h3 class="font-semibold text-slate-900 mb-1">Escaneie o QR Code</h3>
+            <p class="text-xs text-slate-500 mb-4">Abra o WhatsApp do celular → Configurações → Aparelhos conectados</p>
+            <div class="bg-slate-50 rounded-xl p-4 mb-4">
+              <svg viewBox="0 0 100 100" class="w-full h-auto max-w-[200px] mx-auto" xmlns="http://www.w3.org/2000/svg">
+                <rect width="100" height="100" fill="#fff"/>
+                <g fill="#0D1321">
+                  <rect x="10" y="10" width="20" height="20"/><rect x="14" y="14" width="12" height="12" fill="#fff"/><rect x="17" y="17" width="6" height="6"/>
+                  <rect x="70" y="10" width="20" height="20"/><rect x="74" y="14" width="12" height="12" fill="#fff"/><rect x="77" y="17" width="6" height="6"/>
+                  <rect x="10" y="70" width="20" height="20"/><rect x="14" y="74" width="12" height="12" fill="#fff"/><rect x="17" y="77" width="6" height="6"/>
+                  <g>
+                    <rect x="35" y="10" width="3" height="3"/><rect x="40" y="10" width="3" height="3"/><rect x="50" y="13" width="3" height="3"/><rect x="55" y="10" width="3" height="3"/><rect x="60" y="13" width="3" height="3"/>
+                    <rect x="35" y="20" width="3" height="3"/><rect x="45" y="17" width="3" height="3"/><rect x="55" y="20" width="3" height="3"/><rect x="62" y="20" width="3" height="3"/>
+                    <rect x="40" y="25" width="3" height="3"/><rect x="50" y="25" width="3" height="3"/><rect x="60" y="25" width="3" height="3"/>
+                    <rect x="10" y="35" width="3" height="3"/><rect x="20" y="35" width="3" height="3"/><rect x="30" y="35" width="3" height="3"/><rect x="40" y="35" width="3" height="3"/><rect x="50" y="35" width="3" height="3"/><rect x="60" y="35" width="3" height="3"/><rect x="70" y="35" width="3" height="3"/><rect x="80" y="35" width="3" height="3"/>
+                    <rect x="15" y="40" width="3" height="3"/><rect x="25" y="40" width="3" height="3"/><rect x="35" y="40" width="3" height="3"/><rect x="45" y="40" width="3" height="3"/><rect x="55" y="40" width="3" height="3"/><rect x="65" y="40" width="3" height="3"/><rect x="75" y="40" width="3" height="3"/><rect x="85" y="40" width="3" height="3"/>
+                    <rect x="10" y="45" width="3" height="3"/><rect x="20" y="45" width="3" height="3"/><rect x="30" y="48" width="3" height="3"/><rect x="40" y="45" width="3" height="3"/><rect x="50" y="48" width="3" height="3"/><rect x="60" y="45" width="3" height="3"/><rect x="70" y="48" width="3" height="3"/><rect x="80" y="45" width="3" height="3"/>
+                    <rect x="15" y="50" width="3" height="3"/><rect x="35" y="53" width="3" height="3"/><rect x="55" y="50" width="3" height="3"/><rect x="75" y="53" width="3" height="3"/>
+                    <rect x="40" y="60" width="3" height="3"/><rect x="50" y="60" width="3" height="3"/><rect x="60" y="63" width="3" height="3"/><rect x="70" y="60" width="3" height="3"/><rect x="80" y="63" width="3" height="3"/>
+                    <rect x="35" y="70" width="3" height="3"/><rect x="45" y="73" width="3" height="3"/><rect x="55" y="70" width="3" height="3"/><rect x="65" y="73" width="3" height="3"/><rect x="75" y="70" width="3" height="3"/><rect x="85" y="73" width="3" height="3"/>
+                    <rect x="40" y="80" width="3" height="3"/><rect x="50" y="83" width="3" height="3"/><rect x="60" y="80" width="3" height="3"/><rect x="70" y="83" width="3" height="3"/><rect x="80" y="80" width="3" height="3"/>
+                    <rect x="35" y="90" width="3" height="3"/><rect x="45" y="90" width="3" height="3"/><rect x="55" y="93" width="3" height="3"/><rect x="65" y="90" width="3" height="3"/><rect x="75" y="93" width="3" height="3"/><rect x="85" y="90" width="3" height="3"/>
+                  </g>
+                </g>
+                <g transform="translate(40,40)">
+                  <rect width="20" height="20" fill="#fff"/>
+                  <rect x="6" y="6" width="8" height="8" fill="#2563EB"/>
+                </g>
+              </svg>
+            </div>
+            <button class="text-xs text-trivium-blue hover:underline">Atualizar QR</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CONFIG ============ -->
+      <section data-page="config" class="page hidden p-8 fade-in">
+        <h1 class="text-2xl font-bold text-slate-900 mb-1">Configurações</h1>
+        <p class="text-slate-500 text-sm mb-8">Personalize seu workspace</p>
+
+        <div class="max-w-3xl space-y-4">
+          <div class="bg-white border border-slate-200 rounded-xl p-6">
+            <h3 class="font-semibold text-slate-900 mb-4">Perfil</h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div><label class="text-xs text-slate-500">Nome</label><input value="Igor Lima" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" /></div>
+              <div><label class="text-xs text-slate-500">Escritório</label><input value="Lima Contabilidade" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" /></div>
+              <div><label class="text-xs text-slate-500">Email</label><input value="contador@trivium.com" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" /></div>
+              <div><label class="text-xs text-slate-500">Telefone</label><input value="+55 11 98765-4321" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" /></div>
+            </div>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-xl p-6">
+            <h3 class="font-semibold text-slate-900 mb-4">Plano atual</h3>
+            <div class="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div>
+                <div class="font-semibold text-trivium-blue">Trial · 5 dias restantes</div>
+                <div class="text-sm text-slate-600 mt-0.5">50 leads · 1 WhatsApp · até 100 envios/dia</div>
+              </div>
+              <button class="bg-trivium-blue text-white px-4 py-2 rounded-lg text-sm font-medium">Fazer upgrade</button>
+            </div>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-xl p-6">
+            <h3 class="font-semibold text-slate-900 mb-4">Identidade visual</h3>
+            <div class="grid grid-cols-5 gap-2">
+              <div class="aspect-square rounded-lg" style="background:#0D1321"></div>
+              <div class="aspect-square rounded-lg" style="background:#2563EB"></div>
+              <div class="aspect-square rounded-lg" style="background:#334155"></div>
+              <div class="aspect-square rounded-lg" style="background:#64748B"></div>
+              <div class="aspect-square rounded-lg border border-slate-200" style="background:#E2E8F0"></div>
+            </div>
+            <p class="text-xs text-slate-500 mt-3">Paleta Trivium · Poppins</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ LEAD DETAIL (modal-like) ============ -->
+      <section data-page="leadDetail" class="page hidden p-8 fade-in">
+        <button onclick="goTo('leads')" class="text-sm text-slate-500 hover:text-slate-900 mb-4 flex items-center gap-1">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i>Voltar
+        </button>
+        <div class="grid grid-cols-3 gap-6">
+          <div class="space-y-4">
+            <div class="bg-white border border-slate-200 rounded-xl p-6">
+              <div class="w-16 h-16 rounded-full bg-blue-100 text-trivium-blue font-bold flex items-center justify-center text-2xl mb-3">CV</div>
+              <h2 class="text-xl font-bold">Clínica Vida Plena</h2>
+              <span class="inline-block mt-2 text-xs font-semibold uppercase tracking-wide text-purple-700 bg-purple-100 px-2 py-1 rounded">Respondeu</span>
+              <div class="mt-5 space-y-2.5 text-sm">
+                <div class="flex items-center gap-2.5"><i data-lucide="phone" class="w-4 h-4 text-slate-400"></i>+55 11 99988-7766</div>
+                <div class="flex items-center gap-2.5"><i data-lucide="map-pin" class="w-4 h-4 text-slate-400"></i>São Paulo / SP</div>
+                <div class="flex items-center gap-2.5"><i data-lucide="briefcase" class="w-4 h-4 text-slate-400"></i>Clínica Médica</div>
+                <div class="flex items-center gap-2.5"><i data-lucide="globe" class="w-4 h-4 text-slate-400"></i>Manual</div>
+                <div class="flex items-center gap-2.5"><i data-lucide="mail" class="w-4 h-4 text-slate-400"></i>contato@vidaplena.com</div>
+              </div>
+              <button class="mt-5 w-full bg-trivium-blue text-white py-2 rounded-lg text-sm font-medium">Agendar reunião</button>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-xl p-6">
+              <h3 class="font-semibold text-slate-900 mb-3 flex items-center gap-2"><i data-lucide="sticky-note" class="w-4 h-4"></i>Anotações</h3>
+              <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm mb-3">
+                <p>Indicação Dr. João — clínica com 3 médicos, faturamento ~R$ 80k/mês. Atualmente sem contador, fazendo tudo manual.</p>
+                <span class="text-xs text-slate-500 mt-2 block">há 2 horas</span>
+              </div>
+              <textarea placeholder="Adicionar anotação..." class="w-full border border-slate-200 rounded-lg p-2 text-sm" rows="2"></textarea>
+              <button class="mt-2 text-sm text-trivium-blue font-medium">Salvar nota</button>
+            </div>
+          </div>
+
+          <div class="col-span-2 bg-white border border-slate-200 rounded-xl flex flex-col h-[calc(100vh-180px)]">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 class="font-semibold">Conversa</h3>
+                <p class="text-xs text-slate-500">Última mensagem há 12 minutos</p>
+              </div>
+              <span class="text-xs text-green-700 bg-green-100 px-2 py-1 rounded-full font-semibold">● Online</span>
+            </div>
+            <div class="flex-1 overflow-y-auto scrollbar-thin p-6 space-y-3 bg-slate-50/40">
+              <div class="text-center"><span class="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Hoje · 10:32</span></div>
+              <div class="flex justify-end">
+                <div class="max-w-[70%] bg-trivium-blue text-white rounded-2xl rounded-br-md p-3 text-sm">
+                  Olá! Vi que vocês são uma Clínica Médica em São Paulo. Sou contador especialista em clínicas e ajudo a deixar a parte fiscal/trabalhista 100% organizada sem você gastar tempo. Faz sentido conversarmos 15min?
+                  <div class="text-[10px] text-blue-200 mt-1 text-right">10:32 ✓✓</div>
+                </div>
+              </div>
+              <div class="flex justify-start">
+                <div class="max-w-[70%] bg-white border border-slate-200 rounded-2xl rounded-bl-md p-3 text-sm">
+                  Bom dia! Tem interesse sim. Pode me passar mais detalhes? Quanto custa?
+                  <div class="text-[10px] text-slate-400 mt-1">10:44</div>
+                </div>
+              </div>
+              <div class="flex justify-end">
+                <div class="max-w-[70%] bg-trivium-blue text-white rounded-2xl rounded-br-md p-3 text-sm">
+                  Perfeito! Trabalhamos com clínicas de pequeno e médio porte. Para ter um valor preciso, preciso entender 3 coisas rápidas: quantos médicos, faturamento médio mensal e regime tributário atual. Pode me passar?
+                  <div class="text-[10px] text-blue-200 mt-1 text-right">10:46 ✓✓</div>
+                </div>
+              </div>
+              <div class="flex justify-start">
+                <div class="max-w-[70%] bg-white border border-slate-200 rounded-2xl rounded-bl-md p-3 text-sm">
+                  São 3 médicos, faturamos cerca de R$ 80 mil/mês. Atualmente Simples Nacional.
+                  <div class="text-[10px] text-slate-400 mt-1">11:02</div>
+                </div>
+              </div>
+            </div>
+            <div class="p-4 border-t border-slate-100">
+              <div class="flex items-end gap-2">
+                <button class="p-2 hover:bg-slate-100 rounded-lg"><i data-lucide="paperclip" class="w-5 h-5 text-slate-500"></i></button>
+                <textarea placeholder="Digite uma mensagem..." rows="1" class="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none"></textarea>
+                <button class="bg-trivium-blue text-white p-2 rounded-lg hover:bg-trivium-blue-dark"><i data-lucide="send" class="w-5 h-5"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- New Campaign Modal -->
+  <div id="newCampaignModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-lg w-full p-6">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="text-lg font-bold">Nova campanha</h3>
+        <button onclick="document.getElementById('newCampaignModal').classList.add('hidden')" class="p-1 hover:bg-slate-100 rounded"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="space-y-4">
+        <div><label class="text-sm font-medium">Nome da campanha</label><input placeholder="Ex: Médicos São Paulo Maio" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" /></div>
+        <div><label class="text-sm font-medium">Template</label><select class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm"><option>Abordagem inicial - Médicos</option><option>Abordagem inicial - Advogados</option></select></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="text-sm font-medium">Cidade</label><input placeholder="Todas" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" /></div>
+          <div><label class="text-sm font-medium">Segmento</label><select class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm"><option>Todos</option><option>Médicos</option><option>Advogados</option><option>Clínicas</option></select></div>
+        </div>
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+          <i data-lucide="info" class="w-4 h-4 inline text-trivium-blue"></i> 320 leads aptos serão incluídos · estimativa de envio: ~6 horas
+        </div>
+      </div>
+      <div class="flex gap-2 mt-6">
+        <button onclick="document.getElementById('newCampaignModal').classList.add('hidden')" class="flex-1 border border-slate-200 px-4 py-2 rounded-lg text-sm">Cancelar</button>
+        <button class="flex-1 bg-trivium-blue text-white px-4 py-2 rounded-lg text-sm font-medium">Criar e iniciar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Campaign Modal -->
+  <div id="editCampaignModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-thin">
+      <div class="sticky top-0 bg-white border-b border-slate-100 p-5 flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-bold">Editar campanha</h3>
+          <p class="text-xs text-slate-500" id="editCampNameHint">—</p>
+        </div>
+        <button onclick="closeEditCampaign()" class="p-1 hover:bg-slate-100 rounded"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-6 space-y-5">
+        <div>
+          <label class="text-sm font-medium block mb-1">Nome da campanha</label>
+          <input id="editCampName" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-sm font-medium block mb-1">Status</label>
+            <select id="editCampStatus" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              <option>Em execução</option><option>Pausada</option><option>Concluída</option><option>Rascunho</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm font-medium block mb-1">Template</label>
+            <select id="editCampTemplate" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              <option>Abordagem inicial - Médicos</option>
+              <option>Abordagem inicial - Advogados</option>
+              <option>Follow-up D+3</option>
+              <option>Follow-up D+7</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="text-sm font-medium block mb-2">Filtros de segmentação</label>
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="text-xs text-slate-500">Cidade</label>
+              <input class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Todas" />
+            </div>
+            <div>
+              <label class="text-xs text-slate-500">Segmento</label>
+              <select class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm"><option>Todos</option><option>Médicos</option><option>Advogados</option><option>Clínicas</option></select>
+            </div>
+            <div>
+              <label class="text-xs text-slate-500">Origem</label>
+              <select class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm"><option>Todas</option><option>Manual</option><option>Google</option><option>Parceiro</option></select>
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="text-sm font-medium block mb-2">Janela de envio</label>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-slate-500">Horário início</label>
+              <input type="time" value="09:00" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label class="text-xs text-slate-500">Horário fim</label>
+              <input type="time" value="18:00" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2 mt-3">
+            <label class="flex items-center gap-1.5 text-sm border border-slate-200 px-2.5 py-1 rounded"><input type="checkbox" checked />Seg</label>
+            <label class="flex items-center gap-1.5 text-sm border border-slate-200 px-2.5 py-1 rounded"><input type="checkbox" checked />Ter</label>
+            <label class="flex items-center gap-1.5 text-sm border border-slate-200 px-2.5 py-1 rounded"><input type="checkbox" checked />Qua</label>
+            <label class="flex items-center gap-1.5 text-sm border border-slate-200 px-2.5 py-1 rounded"><input type="checkbox" checked />Qui</label>
+            <label class="flex items-center gap-1.5 text-sm border border-slate-200 px-2.5 py-1 rounded"><input type="checkbox" checked />Sex</label>
+            <label class="flex items-center gap-1.5 text-sm border border-slate-200 px-2.5 py-1 rounded"><input type="checkbox" />Sáb</label>
+            <label class="flex items-center gap-1.5 text-sm border border-slate-200 px-2.5 py-1 rounded"><input type="checkbox" />Dom</label>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-3 pt-3 border-t border-slate-100">
+          <div class="bg-slate-50 rounded-lg p-3 text-center"><div class="text-lg font-bold" id="editCampStatLeads">—</div><div class="text-xs text-slate-500">Leads</div></div>
+          <div class="bg-slate-50 rounded-lg p-3 text-center"><div class="text-lg font-bold" id="editCampStatEnv">—</div><div class="text-xs text-slate-500">Enviados</div></div>
+          <div class="bg-slate-50 rounded-lg p-3 text-center"><div class="text-lg font-bold text-trivium-blue" id="editCampStatTaxa">—</div><div class="text-xs text-slate-500">Taxa resposta</div></div>
+        </div>
+      </div>
+      <div class="sticky bottom-0 bg-white border-t border-slate-100 p-4 flex gap-2 justify-between">
+        <button class="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-1.5"><i data-lucide="trash-2" class="w-4 h-4"></i>Excluir</button>
+        <div class="flex gap-2">
+          <button onclick="closeEditCampaign()" class="border border-slate-200 px-4 py-2 rounded-lg text-sm">Cancelar</button>
+          <button onclick="saveEditCampaign()" class="bg-trivium-blue text-white px-5 py-2 rounded-lg text-sm font-medium">Salvar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Template Modal -->
+  <div id="editTemplateModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto scrollbar-thin">
+      <div class="sticky top-0 bg-white border-b border-slate-100 p-5 flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-bold" id="editTplTitle">Editar template</h3>
+          <p class="text-xs text-slate-500">Use variáveis como <code class="bg-slate-100 px-1 rounded">{{nome_empresa}}</code> para personalizar</p>
+        </div>
+        <button onclick="closeEditTemplate()" class="p-1 hover:bg-slate-100 rounded"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-6 grid grid-cols-2 gap-6">
+        <div class="space-y-4">
+          <div>
+            <label class="text-sm font-medium block mb-1">Nome do template</label>
+            <input id="editTplName" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="text-sm font-medium block mb-1">Tipo</label>
+            <select id="editTplTipo" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              <option>Inicial</option>
+              <option>Follow-up 1</option>
+              <option>Follow-up 2</option>
+              <option>Follow-up 3</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm font-medium block mb-1">Mensagem</label>
+            <textarea id="editTplContent" rows="8" oninput="renderTplPreview()" class="w-full border border-slate-200 rounded-lg p-3 text-sm font-mono"></textarea>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-slate-500 block mb-1.5">Variáveis disponíveis (clique para inserir)</label>
+            <div class="flex flex-wrap gap-1.5">
+              <button onclick="insertVar('{{nome_empresa}}')" class="text-xs bg-blue-50 text-trivium-blue border border-blue-200 px-2 py-1 rounded hover:bg-blue-100">{{nome_empresa}}</button>
+              <button onclick="insertVar('{{cidade}}')" class="text-xs bg-blue-50 text-trivium-blue border border-blue-200 px-2 py-1 rounded hover:bg-blue-100">{{cidade}}</button>
+              <button onclick="insertVar('{{estado}}')" class="text-xs bg-blue-50 text-trivium-blue border border-blue-200 px-2 py-1 rounded hover:bg-blue-100">{{estado}}</button>
+              <button onclick="insertVar('{{segmento}}')" class="text-xs bg-blue-50 text-trivium-blue border border-blue-200 px-2 py-1 rounded hover:bg-blue-100">{{segmento}}</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="text-sm font-medium block mb-2">Pré-visualização</label>
+          <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+            <div class="text-xs text-slate-500 mb-2 flex items-center gap-1"><i data-lucide="eye" class="w-3 h-3"></i>Como o lead vai ver:</div>
+            <div class="bg-white border border-slate-200 rounded-2xl rounded-bl-md p-3 text-sm shadow-sm">
+              <div id="editTplPreview" class="whitespace-pre-wrap leading-relaxed text-slate-700"></div>
+              <div class="text-[10px] text-slate-400 mt-2">10:32 ✓✓</div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-slate-200">
+              <div class="text-xs text-slate-500 mb-2">Variáveis sendo substituídas por:</div>
+              <ul class="text-xs space-y-1">
+                <li><span class="font-mono text-trivium-blue">{{nome_empresa}}</span> → Clínica Vida Plena</li>
+                <li><span class="font-mono text-trivium-blue">{{cidade}}</span> → São Paulo</li>
+                <li><span class="font-mono text-trivium-blue">{{estado}}</span> → SP</li>
+                <li><span class="font-mono text-trivium-blue">{{segmento}}</span> → Clínica Médica</li>
+              </ul>
+            </div>
+          </div>
+          <div class="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs text-yellow-900">
+            <i data-lucide="alert-triangle" class="w-3.5 h-3.5 inline mr-1"></i>
+            Dica anti-ban: crie 3-5 versões deste template variando as palavras para evitar padrão repetitivo.
+          </div>
+        </div>
+      </div>
+      <div class="sticky bottom-0 bg-white border-t border-slate-100 p-4 flex gap-2 justify-between">
+        <button class="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-1.5"><i data-lucide="trash-2" class="w-4 h-4"></i>Excluir</button>
+        <div class="flex gap-2">
+          <button onclick="closeEditTemplate()" class="border border-slate-200 px-4 py-2 rounded-lg text-sm">Cancelar</button>
+          <button onclick="saveEditTemplate()" class="bg-trivium-blue text-white px-5 py-2 rounded-lg text-sm font-medium">Salvar template</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================ -->
+<!-- TOAST NOTIFICATION                            -->
+<!-- ============================================ -->
+<div id="toast" class="hidden fixed top-6 right-6 bg-white border border-slate-200 shadow-lg rounded-lg p-4 max-w-sm z-50 fade-in">
+  <div class="flex items-start gap-3">
+    <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0"><i data-lucide="message-circle" class="w-4 h-4 text-green-600"></i></div>
+    <div class="flex-1">
+      <div class="font-medium text-sm">Nova resposta!</div>
+      <div class="text-xs text-slate-500 mt-0.5">Clínica Vida Plena: "Tem interesse sim..."</div>
+    </div>
+    <button onclick="document.getElementById('toast').classList.add('hidden')" class="text-slate-400"><i data-lucide="x" class="w-4 h-4"></i></button>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- DATA + LOGIC                                  -->
+<!-- ============================================ -->
+<script>
+// ============== MOCK DATA ==============
+const LEADS = [
+  { empresa:'Clínica Vida Plena', tel:'(11) 99988-7766', cidade:'São Paulo/SP', seg:'Clínica', orig:'Manual', status:'Respondeu', tag:'purple', last:'há 12min' },
+  { empresa:'Dra. Renata Cardiologista', tel:'(21) 97777-5544', cidade:'Rio de Janeiro/RJ', seg:'Médico', orig:'Google', status:'Reunião', tag:'orange', last:'há 38min' },
+  { empresa:'Advocacia Silva & Pereira', tel:'(11) 98876-3322', cidade:'Campinas/SP', seg:'Advogado', orig:'Manual', status:'Respondeu', tag:'purple', last:'há 1h' },
+  { empresa:'Padaria do Edu', tel:'(11) 95544-1100', cidade:'São Paulo/SP', seg:'Padaria', orig:'Parceiro', status:'Respondeu', tag:'purple', last:'há 2h' },
+  { empresa:'Estúdio Pilates Bella', tel:'(11) 99123-4567', cidade:'Santos/SP', seg:'Estúdio', orig:'Instagram', status:'Contatado', tag:'blue', last:'há 3h' },
+  { empresa:'Dr. Carlos Oliveira', tel:'(31) 98765-4321', cidade:'Belo Horizonte/MG', seg:'Médico', orig:'Google', status:'Contatado', tag:'blue', last:'há 5h' },
+  { empresa:'Dental Clean Odontologia', tel:'(11) 94567-8910', cidade:'Guarulhos/SP', seg:'Clínica', orig:'Manual', status:'Cliente', tag:'green', last:'há 1 dia' },
+  { empresa:'Salão Beleza Pura', tel:'(11) 93210-7654', cidade:'São Paulo/SP', seg:'Estética', orig:'Base antiga', status:'Novo', tag:'slate', last:'—' },
+  { empresa:'Pet Shop Amigo Fiel', tel:'(11) 98899-1122', cidade:'Osasco/SP', seg:'Pet Shop', orig:'Google', status:'Novo', tag:'slate', last:'—' },
+  { empresa:'Dr. Marcelo Pediatra', tel:'(11) 99655-4433', cidade:'Santo André/SP', seg:'Médico', orig:'Indicação', status:'Reunião', tag:'orange', last:'há 1 dia' },
+  { empresa:'Restaurante Sabor da Casa', tel:'(11) 97788-9900', cidade:'São Paulo/SP', seg:'Restaurante', orig:'Manual', status:'Perdido', tag:'red', last:'há 2 dias' },
+  { empresa:'Academia Forma Corpo', tel:'(11) 96655-3344', cidade:'Diadema/SP', seg:'Academia', orig:'Google', status:'Cliente', tag:'green', last:'há 3 dias' },
+];
+
+const TAG_CLASSES = {
+  slate: 'bg-slate-100 text-slate-700',
+  blue: 'bg-blue-100 text-blue-700',
+  purple: 'bg-purple-100 text-purple-700',
+  orange: 'bg-orange-100 text-orange-700',
+  green: 'bg-green-100 text-green-700',
+  red: 'bg-red-100 text-red-700',
+};
+
+const KANBAN_COLS = [
+  { key:'Novo', color:'slate', count:0 },
+  { key:'Contatado', color:'blue', count:0 },
+  { key:'Respondeu', color:'purple', count:0 },
+  { key:'Reunião', color:'orange', count:0 },
+  { key:'Cliente', color:'green', count:0 },
+  { key:'Perdido', color:'red', count:0 },
+];
+
+const CAMPANHAS = [
+  { nome:'Médicos São Paulo - Maio', status:'Em execução', leads:320, enviados:218, respostas:47, taxa:21, cor:'blue' },
+  { nome:'Advogados Campinas', status:'Concluída', leads:180, enviados:180, respostas:39, taxa:22, cor:'green' },
+  { nome:'Clínicas RJ - Q2', status:'Pausada', leads:240, enviados:88, respostas:14, taxa:16, cor:'yellow' },
+  { nome:'Restaurantes Zona Sul', status:'Rascunho', leads:0, enviados:0, respostas:0, taxa:0, cor:'slate' },
+];
+
+const TEMPLATES = [
+  { nome:'Abordagem inicial - Médicos', tipo:'Inicial', uso:124, conteudo:'Olá! Vi que vocês são uma {{segmento}} em {{cidade}}. Sou contador especialista em clínicas médicas e ajudo a deixar fiscal/trabalhista 100% organizado. Faz sentido conversarmos 15min?' },
+  { nome:'Abordagem inicial - Advogados', tipo:'Inicial', uso:89, conteudo:'Olá {{nome_empresa}}! Sou contador focado em escritórios de advocacia. Já organizei a contabilidade de vários colegas advogados. Posso te explicar em 15min?' },
+  { nome:'Follow-up D+3', tipo:'Follow-up 1', uso:312, conteudo:'Oi! Te mandei mensagem semana passada sobre os serviços de contabilidade. Conseguiu pensar? Estou à disposição para tirar qualquer dúvida.' },
+  { nome:'Follow-up D+7', tipo:'Follow-up 2', uso:198, conteudo:'Tudo bem? Última mensagem por aqui. Se quiser conversar depois, é só chamar! Abraços.' },
+];
+
+const INBOX = [
+  { empresa:'Clínica Vida Plena', msg:'Tem interesse sim. Pode me passar mais detalhes? Quanto custa?', tag:'green', label:'Interessado', time:'há 12min' },
+  { empresa:'Dra. Renata Cardiologista', msg:'Beleza, vamos marcar amanhã 14h então. Manda o link.', tag:'orange', label:'Reunião', time:'há 38min' },
+  { empresa:'Advocacia Silva & Pereira', msg:'Quanto custa o serviço mensal? Vocês fazem departamento pessoal?', tag:'yellow', label:'Dúvida', time:'há 1h' },
+  { empresa:'Padaria do Edu', msg:'Já tenho contador, mas pode me mandar proposta. Sempre bom comparar.', tag:'green', label:'Interessado', time:'há 2h' },
+  { empresa:'Estúdio Pilates Bella', msg:'Vou conversar com meu sócio e te retorno!', tag:'yellow', label:'Dúvida', time:'há 3h' },
+  { empresa:'Restaurante Sabor da Casa', msg:'Não tenho interesse, obrigado.', tag:'red', label:'Não interessado', time:'há 5h' },
+];
+
+const LABEL_COLORS = {
+  green: 'bg-green-100 text-green-700',
+  yellow: 'bg-yellow-100 text-yellow-700',
+  orange: 'bg-orange-100 text-orange-700',
+  red: 'bg-red-100 text-red-700',
+};
+
+// ============== NAVIGATION ==============
+function goTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+  const target = document.querySelector(`[data-page="${page}"]`);
+  if (target) {
+    target.classList.remove('hidden');
+    target.classList.remove('fade-in'); void target.offsetWidth; target.classList.add('fade-in');
+  }
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.classList.remove('bg-white/10', 'text-white');
+    n.classList.add('text-slate-300', 'hover:bg-white/5', 'hover:text-white');
+  });
+  const navBtn = document.querySelector(`.nav-item[data-nav="${page}"]`);
+  if (navBtn) {
+    navBtn.classList.add('bg-white/10', 'text-white');
+    navBtn.classList.remove('text-slate-300');
+  }
+  document.querySelector('main').scrollTop = 0;
+}
+
+// ============== SUPABASE CONFIG ==============
+let sb = null;
+let currentUser = null;
+
+function loadSupabaseConfig() {
+  const url = localStorage.getItem('triv_sb_url');
+  const key = localStorage.getItem('triv_sb_key');
+  if (url && key && window.supabase) {
+    sb = window.supabase.createClient(url, key);
+    document.getElementById('cfgStatus').textContent = 'Conectado';
+    document.getElementById('cfgStatus').className = 'text-green-400';
+    return true;
+  }
+  return false;
+}
+
+function openConfig() {
+  document.getElementById('configModal').classList.remove('hidden');
+  document.getElementById('cfgUrl').value = localStorage.getItem('triv_sb_url') || '';
+  document.getElementById('cfgKey').value = localStorage.getItem('triv_sb_key') || '';
+}
+
+function saveConfig() {
+  const url = document.getElementById('cfgUrl').value.trim();
+  const key = document.getElementById('cfgKey').value.trim();
+  const errEl = document.getElementById('cfgErr');
+  errEl.classList.add('hidden');
+  if (!url.includes('supabase.co') || !key.startsWith('eyJ')) {
+    errEl.textContent = 'URL ou chave em formato inválido. Verifique e tente novamente.';
+    errEl.classList.remove('hidden'); return;
+  }
+  localStorage.setItem('triv_sb_url', url);
+  localStorage.setItem('triv_sb_key', key);
+  document.getElementById('configModal').classList.add('hidden');
+  loadSupabaseConfig();
+  showToastInfo('Supabase conectado!');
+}
+
+function useDemoMode() {
+  localStorage.removeItem('triv_sb_url');
+  localStorage.removeItem('triv_sb_key');
+  sb = null;
+  document.getElementById('cfgStatus').textContent = 'Demo';
+  document.getElementById('cfgStatus').className = '';
+  document.getElementById('configModal').classList.add('hidden');
+}
+
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-form').forEach(f => f.classList.add('hidden'));
+  document.getElementById('form-' + tab).classList.remove('hidden');
+  document.querySelectorAll('.auth-tab').forEach(b => {
+    b.classList.remove('bg-trivium-blue','text-white');
+    b.classList.add('text-slate-400');
+  });
+  const active = document.querySelector(`.auth-tab[data-tab="${tab}"]`);
+  active.classList.add('bg-trivium-blue','text-white');
+  active.classList.remove('text-slate-400');
+}
+
+// ============== AUTH ==============
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pw = document.getElementById('loginPw').value;
+  const errEl = document.getElementById('loginErr');
+  const btn = document.getElementById('loginBtn');
+  errEl.classList.add('hidden');
+
+  if (!sb) { enterApp({ email: email || 'demo@trivium.com', user_metadata: { nome: 'Igor Lima' } }); return; }
+
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+  btn.disabled = false; btn.textContent = 'Entrar';
+  if (error) { errEl.textContent = traduzirErro(error.message); errEl.classList.remove('hidden'); return; }
+  enterApp(data.user);
+}
+
+async function doSignup() {
+  const nome = document.getElementById('signupName').value.trim();
+  const email = document.getElementById('signupEmail').value.trim();
+  const pw = document.getElementById('signupPw').value;
+  const errEl = document.getElementById('signupErr');
+  const okEl = document.getElementById('signupOk');
+  const btn = document.getElementById('signupBtn');
+  errEl.classList.add('hidden'); okEl.classList.add('hidden');
+
+  if (!sb) { enterApp({ email, user_metadata: { nome } }); return; }
+
+  btn.disabled = true; btn.textContent = 'Criando...';
+  const { data, error } = await sb.auth.signUp({
+    email, password: pw,
+    options: { data: { nome }, emailRedirectTo: window.location.href }
+  });
+  btn.disabled = false; btn.textContent = 'Criar conta';
+
+  if (error) { errEl.textContent = traduzirErro(error.message); errEl.classList.remove('hidden'); return; }
+
+  if (data.session) { enterApp(data.user); return; }
+
+  okEl.textContent = '✓ Conta criada! Verifique seu email para confirmar antes de entrar.';
+  okEl.classList.remove('hidden');
+  setTimeout(() => switchAuthTab('login'), 3000);
+}
+
+async function doRecover() {
+  const email = document.getElementById('recoverEmail').value.trim();
+  const errEl = document.getElementById('recoverErr');
+  const okEl = document.getElementById('recoverOk');
+  const btn = document.getElementById('recoverBtn');
+  errEl.classList.add('hidden'); okEl.classList.add('hidden');
+
+  if (!sb) {
+    okEl.textContent = '✓ (modo demo) Email de recuperação simulado.';
+    okEl.classList.remove('hidden'); return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+  btn.disabled = false; btn.textContent = 'Enviar link';
+  if (error) { errEl.textContent = traduzirErro(error.message); errEl.classList.remove('hidden'); return; }
+  okEl.textContent = '✓ Link enviado para seu email!'; okEl.classList.remove('hidden');
+}
+
+function traduzirErro(msg) {
+  if (/Invalid login credentials/i.test(msg)) return 'Email ou senha incorretos.';
+  if (/already registered/i.test(msg)) return 'Esse email já tem conta. Tente entrar.';
+  if (/Password should be at least/i.test(msg)) return 'Senha precisa ter no mínimo 6 caracteres.';
+  if (/Email not confirmed/i.test(msg)) return 'Confirme seu email antes de entrar (link enviado no cadastro).';
+  if (/rate limit/i.test(msg)) return 'Muitas tentativas. Aguarde 1 minuto.';
+  return msg;
+}
+
+function enterApp(user) {
+  currentUser = user;
+  const nome = user?.user_metadata?.nome || user?.email?.split('@')[0] || 'Usuário';
+  const email = user?.email || '';
+  const sidebar = document.querySelector('aside .flex-1.min-w-0');
+  if (sidebar) {
+    sidebar.querySelector('.font-medium').textContent = nome;
+    sidebar.querySelector('.text-slate-400').textContent = email;
+  }
+  const avatar = document.querySelector('aside .gradient-blue');
+  if (avatar) avatar.textContent = nome.split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase();
+
+  document.getElementById('screen-login').style.display = 'none';
+  document.getElementById('screen-app').classList.remove('hidden');
+  document.getElementById('screen-app').classList.add('flex');
+  goTo('dashboard');
+  setTimeout(() => {
+    document.getElementById('toast').classList.remove('hidden');
+    setTimeout(() => document.getElementById('toast').classList.add('hidden'), 5000);
+  }, 2500);
+}
+
+async function logout() {
+  if (sb) await sb.auth.signOut();
+  currentUser = null;
+  document.getElementById('screen-app').classList.add('hidden');
+  document.getElementById('screen-app').classList.remove('flex');
+  document.getElementById('screen-login').style.display = 'flex';
+  switchAuthTab('login');
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPw').value = '';
+}
+
+async function checkExistingSession() {
+  if (!sb) return false;
+  const { data } = await sb.auth.getSession();
+  if (data.session) { enterApp(data.session.user); return true; }
+  return false;
+}
+
+function simulateImport() {
+  const result = document.getElementById('importResult');
+  result.classList.remove('hidden');
+  result.scrollIntoView({ behavior:'smooth' });
+}
+
+// ============== RENDER FUNCTIONS ==============
+function renderLeadsTable() {
+  const tbody = document.getElementById('leadsTable');
+  tbody.innerHTML = LEADS.map(l => `
+    <tr class="hover:bg-slate-50 cursor-pointer" onclick="goTo('leadDetail')">
+      <td class="px-4 py-3"><input type="checkbox" onclick="event.stopPropagation()" /></td>
+      <td class="px-4 py-3 font-medium text-slate-900">${l.empresa}</td>
+      <td class="px-4 py-3 text-slate-600">${l.tel}</td>
+      <td class="px-4 py-3 text-slate-600">${l.cidade}</td>
+      <td class="px-4 py-3 text-slate-600">${l.seg}</td>
+      <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">${l.orig}</span></td>
+      <td class="px-4 py-3"><span class="text-xs font-medium px-2 py-0.5 rounded-full ${TAG_CLASSES[l.tag]}">${l.status}</span></td>
+      <td class="px-4 py-3 text-slate-500 text-xs">${l.last}</td>
+    </tr>
+  `).join('');
+}
+
+function renderKanban() {
+  const board = document.getElementById('kanbanBoard');
+  const counts = {};
+  LEADS.forEach(l => counts[l.status] = (counts[l.status]||0)+1);
+  const COL_BG = {
+    slate:'border-slate-200', blue:'border-blue-200', purple:'border-purple-200',
+    orange:'border-orange-200', green:'border-green-200', red:'border-red-200'
+  };
+  board.innerHTML = KANBAN_COLS.map(c => `
+    <div class="bg-white border ${COL_BG[c.color]} rounded-xl p-3 flex flex-col" data-col="${c.key}" ondragover="event.preventDefault(); this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="dropLead(event,'${c.key}')">
+      <div class="flex items-center justify-between mb-3 px-1">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-${c.color}-500"></span>
+          <span class="font-semibold text-sm">${c.key}</span>
+        </div>
+        <span class="text-xs text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">${counts[c.key]||0}</span>
+      </div>
+      <div class="space-y-2 min-h-[200px]">
+        ${LEADS.filter(l => l.status === c.key).map((l, i) => `
+          <div draggable="true" ondragstart="dragStart(event,'${l.empresa}')" class="draggable bg-white border border-slate-200 rounded-lg p-3 hover:shadow-sm" onclick="goTo('leadDetail')">
+            <div class="font-medium text-sm">${l.empresa}</div>
+            <div class="text-xs text-slate-500 mt-0.5">${l.cidade.split('/')[0]} · ${l.seg}</div>
+            <div class="flex items-center justify-between mt-2">
+              <span class="text-[10px] uppercase tracking-wider text-slate-400">${l.orig}</span>
+              <span class="text-[10px] text-slate-400">${l.last}</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+let dragged = null;
+function dragStart(e, empresa) { dragged = empresa; e.dataTransfer.effectAllowed='move'; }
+function dropLead(e, col) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const lead = LEADS.find(l => l.empresa === dragged);
+  if (lead) {
+    lead.status = col;
+    const colors = { Novo:'slate', Contatado:'blue', Respondeu:'purple', 'Reunião':'orange', Cliente:'green', Perdido:'red' };
+    lead.tag = colors[col];
+    renderKanban();
+  }
+}
+
+function renderInbox() {
+  const list = document.getElementById('inboxList');
+  list.innerHTML = INBOX.map(m => `
+    <div class="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-sm cursor-pointer" onclick="goTo('leadDetail')">
+      <div class="flex items-center justify-between mb-1">
+        <span class="font-semibold text-slate-900">${m.empresa}</span>
+        <span class="text-xs text-slate-400">${m.time}</span>
+      </div>
+      <p class="text-sm text-slate-600 mb-2">${m.msg}</p>
+      <span class="text-[10px] font-semibold uppercase tracking-wide ${LABEL_COLORS[m.tag]} px-2 py-0.5 rounded">${m.label}</span>
+    </div>
+  `).join('');
+}
+
+function renderCampanhas() {
+  const list = document.getElementById('campanhasList');
+  const STATUS_COLORS = {
+    blue:'bg-blue-100 text-blue-700', green:'bg-green-100 text-green-700',
+    yellow:'bg-yellow-100 text-yellow-700', slate:'bg-slate-100 text-slate-700'
+  };
+  list.innerHTML = CAMPANHAS.map((c, i) => `
+    <div class="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-sm transition">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <h3 class="font-semibold">${c.nome}</h3>
+          <span class="text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_COLORS[c.cor]}">${c.status}</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <button onclick="openEditCampaign(${i})" class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 flex items-center gap-1.5">
+            <i data-lucide="pencil" class="w-3.5 h-3.5"></i>Editar
+          </button>
+          <button class="p-2 hover:bg-slate-100 rounded-lg"><i data-lucide="more-vertical" class="w-4 h-4 text-slate-500"></i></button>
+        </div>
+      </div>
+      <div class="grid grid-cols-4 gap-4 mb-4">
+        <div><div class="text-xs text-slate-500">Leads</div><div class="font-semibold">${c.leads}</div></div>
+        <div><div class="text-xs text-slate-500">Enviados</div><div class="font-semibold">${c.enviados}</div></div>
+        <div><div class="text-xs text-slate-500">Respostas</div><div class="font-semibold">${c.respostas}</div></div>
+        <div><div class="text-xs text-slate-500">Taxa</div><div class="font-semibold text-trivium-blue">${c.taxa}%</div></div>
+      </div>
+      ${c.leads ? `<div class="h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-trivium-blue rounded-full" style="width:${(c.enviados/c.leads*100)}%"></div></div>` : ''}
+    </div>
+  `).join('');
+  lucide.createIcons();
+}
+
+function renderTemplates() {
+  const list = document.getElementById('templatesList');
+  list.innerHTML = TEMPLATES.map((t, i) => `
+    <div class="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-sm transition">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="font-semibold">${t.nome}</h3>
+        <span class="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">${t.tipo}</span>
+      </div>
+      <p class="text-sm text-slate-600 mb-3 leading-relaxed">${t.conteudo.replace(/\{\{(\w+)\}\}/g, '<span class="bg-blue-50 text-trivium-blue px-1 rounded text-xs font-medium">$1</span>')}</p>
+      <div class="flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-100">
+        <span><i data-lucide="bar-chart-2" class="w-3 h-3 inline mr-1"></i>${t.uso} envios</span>
+        <button onclick="openEditTemplate(${i})" class="text-trivium-blue font-medium hover:underline flex items-center gap-1"><i data-lucide="pencil" class="w-3 h-3"></i>Editar</button>
+      </div>
+    </div>
+  `).join('');
+  lucide.createIcons();
+}
+
+// ============== CHART ==============
+function renderChart() {
+  const ctx = document.getElementById('dashChart');
+  if (!ctx || ctx._rendered) return;
+  ctx._rendered = true;
+  const labels = Array.from({length:30}, (_,i) => `${i+1}`);
+  const enviadas = labels.map(() => Math.floor(Math.random()*40)+30);
+  const respostas = enviadas.map(v => Math.floor(v*(0.18+Math.random()*0.12)));
+  new Chart(ctx, {
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        { label:'Enviadas', data:enviadas, borderColor:'#2563EB', backgroundColor:'rgba(37,99,235,0.08)', fill:true, tension:0.4, pointRadius:0, borderWidth:2 },
+        { label:'Respostas', data:respostas, borderColor:'#A855F7', backgroundColor:'rgba(168,85,247,0.05)', fill:true, tension:0.4, pointRadius:0, borderWidth:2 },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ mode:'index', intersect:false } },
+      scales:{
+        x:{ grid:{display:false}, ticks:{color:'#94A3B8',font:{size:10}} },
+        y:{ grid:{color:'#F1F5F9'}, ticks:{color:'#94A3B8',font:{size:10}}, beginAtZero:true }
+      },
+      interaction:{ intersect:false, mode:'index' }
+    }
+  });
+}
+
+// ============== EDIT CAMPAIGN ==============
+let editingCampIdx = null;
+function openEditCampaign(idx) {
+  editingCampIdx = idx;
+  const c = CAMPANHAS[idx];
+  document.getElementById('editCampName').value = c.nome;
+  document.getElementById('editCampNameHint').textContent = c.nome;
+  document.getElementById('editCampStatus').value = c.status;
+  document.getElementById('editCampStatLeads').textContent = c.leads;
+  document.getElementById('editCampStatEnv').textContent = c.enviados;
+  document.getElementById('editCampStatTaxa').textContent = c.taxa + '%';
+  document.getElementById('editCampaignModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+function closeEditCampaign() { document.getElementById('editCampaignModal').classList.add('hidden'); }
+function saveEditCampaign() {
+  if (editingCampIdx === null) return;
+  CAMPANHAS[editingCampIdx].nome = document.getElementById('editCampName').value;
+  const status = document.getElementById('editCampStatus').value;
+  CAMPANHAS[editingCampIdx].status = status;
+  const colorMap = { 'Em execução':'blue', 'Concluída':'green', 'Pausada':'yellow', 'Rascunho':'slate' };
+  CAMPANHAS[editingCampIdx].cor = colorMap[status] || 'slate';
+  closeEditCampaign();
+  renderCampanhas();
+  showToastInfo('Campanha salva com sucesso');
+}
+
+// ============== EDIT TEMPLATE ==============
+let editingTplIdx = null;
+function openEditTemplate(idx) {
+  editingTplIdx = idx;
+  const t = TEMPLATES[idx];
+  document.getElementById('editTplTitle').textContent = 'Editar: ' + t.nome;
+  document.getElementById('editTplName').value = t.nome;
+  document.getElementById('editTplTipo').value = t.tipo;
+  document.getElementById('editTplContent').value = t.conteudo;
+  renderTplPreview();
+  document.getElementById('editTemplateModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+function closeEditTemplate() { document.getElementById('editTemplateModal').classList.add('hidden'); }
+function renderTplPreview() {
+  const txt = document.getElementById('editTplContent').value || '';
+  const replaced = txt
+    .replace(/\{\{nome_empresa\}\}/g, 'Clínica Vida Plena')
+    .replace(/\{\{cidade\}\}/g, 'São Paulo')
+    .replace(/\{\{estado\}\}/g, 'SP')
+    .replace(/\{\{segmento\}\}/g, 'Clínica Médica');
+  document.getElementById('editTplPreview').textContent = replaced;
+}
+function insertVar(v) {
+  const ta = document.getElementById('editTplContent');
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  ta.value = ta.value.substring(0, start) + v + ta.value.substring(end);
+  ta.focus();
+  ta.selectionStart = ta.selectionEnd = start + v.length;
+  renderTplPreview();
+}
+function saveEditTemplate() {
+  if (editingTplIdx === null) return;
+  TEMPLATES[editingTplIdx].nome = document.getElementById('editTplName').value;
+  TEMPLATES[editingTplIdx].tipo = document.getElementById('editTplTipo').value;
+  TEMPLATES[editingTplIdx].conteudo = document.getElementById('editTplContent').value;
+  closeEditTemplate();
+  renderTemplates();
+  showToastInfo('Template salvo com sucesso');
+}
+
+// ============== TOAST ==============
+function showToastInfo(msg) {
+  const toast = document.getElementById('toast');
+  toast.querySelector('.font-medium').textContent = '✓ Salvo';
+  toast.querySelector('.text-xs').textContent = msg;
+  toast.classList.remove('hidden');
+  setTimeout(() => toast.classList.add('hidden'), 2500);
+}
+
+// ============== INIT ==============
+document.addEventListener('DOMContentLoaded', async () => {
+  lucide.createIcons();
+  renderLeadsTable();
+  renderKanban();
+  renderInbox();
+  renderCampanhas();
+  renderTemplates();
+
+  // Auth init
+  switchAuthTab('login');
+  const hasConfig = loadSupabaseConfig();
+  if (hasConfig) {
+    try { await checkExistingSession(); } catch(e) { console.warn('session check fail', e); }
+  }
+
+  // Origem buttons toggle
+  document.querySelectorAll('.origem-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.origem-btn').forEach(x => {
+        x.classList.remove('border-trivium-blue','bg-blue-50','text-trivium-blue','border-2');
+        x.classList.add('border','border-slate-200');
+      });
+      b.classList.remove('border','border-slate-200');
+      b.classList.add('border-2','border-trivium-blue','bg-blue-50','text-trivium-blue');
+    });
+  });
+
+  // Render chart when dashboard loads
+  setTimeout(renderChart, 100);
+  const observer = new MutationObserver(() => { setTimeout(renderChart, 50); });
+  observer.observe(document.querySelector('[data-page="dashboard"]'), { attributes:true, attributeFilter:['class'] });
+});
+</script>
+
+</body>
+</html>
