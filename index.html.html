@@ -60,48 +60,21 @@
 <!-- ============================================ -->
 <svg width="0" height="0" style="position:absolute">
   <defs>
-    <linearGradient id="trivBlueLight" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#60A5FA"/>
-      <stop offset="55%" stop-color="#2563EB"/>
-      <stop offset="100%" stop-color="#1E3A8A"/>
-    </linearGradient>
-    <linearGradient id="trivBlueMid" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="trivLogo" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#3B82F6"/>
       <stop offset="100%" stop-color="#1D4ED8"/>
     </linearGradient>
-    <linearGradient id="trivSilver" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#E2E8F0"/>
-      <stop offset="100%" stop-color="#64748B"/>
-    </linearGradient>
-    <linearGradient id="trivBlueDark" x1="50%" y1="0%" x2="50%" y2="100%">
-      <stop offset="0%" stop-color="#1E40AF"/>
-      <stop offset="100%" stop-color="#0F172A"/>
-    </linearGradient>
-    <!-- Aliases for compatibility -->
-    <linearGradient id="trivLogo" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#60A5FA"/>
-      <stop offset="100%" stop-color="#1E3A8A"/>
-    </linearGradient>
     <linearGradient id="trivLogoDark" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#94A3B8"/>
-      <stop offset="100%" stop-color="#475569"/>
+      <stop offset="0%" stop-color="#64748B"/>
+      <stop offset="100%" stop-color="#334155"/>
     </linearGradient>
   </defs>
 </svg>
 
-<!-- Logo template: inverted triangle with stylized T, multi-faceted 3D origami -->
 <template id="logo-tpl">
   <svg viewBox="0 0 64 64" class="w-full h-full">
-    <!-- Top horizontal bar - left part (bright blue) -->
-    <polygon points="6,14 32,14 32,26 22,26 22,20 6,20" fill="url(#trivBlueLight)"/>
-    <!-- Top horizontal bar - right part (mid blue) -->
-    <polygon points="32,14 58,14 50,22 42,22 32,26" fill="url(#trivBlueMid)"/>
-    <!-- Left dark shadow / shoulder -->
-    <polygon points="6,20 22,20 22,26 28,52 16,42" fill="url(#trivBlueDark)" opacity="0.85"/>
-    <!-- Stem of T - silver front face -->
-    <polygon points="22,26 32,26 42,22 38,50 32,58 28,52" fill="url(#trivSilver)"/>
-    <!-- Stem - right blue accent / highlight edge -->
-    <polygon points="42,22 50,22 38,50" fill="url(#trivBlueLight)"/>
+    <path d="M4 8 L60 8 L52 22 L40 22 L40 56 L24 56 L24 22 L12 22 Z" fill="url(#trivLogo)"/>
+    <path d="M40 22 L40 56 L24 56 L24 38 Z" fill="url(#trivLogoDark)" opacity="0.6"/>
   </svg>
 </template>
 
@@ -110,7 +83,7 @@
 <!-- ============================================ -->
 <div id="configModal" class="hidden fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4">
   <div class="bg-white rounded-xl max-w-lg w-full p-6">
-    <div class="w-12 h-12 mb-4"><svg viewBox="0 0 64 64" class="w-full h-full"><polygon points="6,14 32,14 32,26 22,26 22,20 6,20" fill="url(#trivBlueLight)"/><polygon points="32,14 58,14 50,22 42,22 32,26" fill="url(#trivBlueMid)"/><polygon points="6,20 22,20 22,26 28,52 16,42" fill="url(#trivBlueDark)" opacity="0.85"/><polygon points="22,26 32,26 42,22 38,50 32,58 28,52" fill="url(#trivSilver)"/><polygon points="42,22 50,22 38,50" fill="url(#trivBlueLight)"/></svg></div>
+    <div class="w-12 h-12 mb-4"><svg viewBox="0 0 64 64" class="w-full h-full"><path d="M4 8 L60 8 L52 22 L40 22 L40 56 L24 56 L24 22 L12 22 Z" fill="url(#trivLogo)"/><path d="M40 22 L40 56 L24 56 L24 38 Z" fill="url(#trivLogoDark)" opacity="0.6"/></svg></div>
     <h3 class="text-xl font-bold mb-1">Conectar Supabase</h3>
     <p class="text-sm text-slate-500 mb-5">Cole as chaves do seu projeto Supabase pra ativar o login real. Encontre em: Settings → API.</p>
     <div class="space-y-3">
@@ -139,7 +112,7 @@
     <div class="w-full max-w-sm">
       <div class="flex items-center justify-between mb-12">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10"><svg viewBox="0 0 64 64" class="w-full h-full"><polygon points="6,14 32,14 32,26 22,26 22,20 6,20" fill="url(#trivBlueLight)"/><polygon points="32,14 58,14 50,22 42,22 32,26" fill="url(#trivBlueMid)"/><polygon points="6,20 22,20 22,26 28,52 16,42" fill="url(#trivBlueDark)" opacity="0.85"/><polygon points="22,26 32,26 42,22 38,50 32,58 28,52" fill="url(#trivSilver)"/><polygon points="42,22 50,22 38,50" fill="url(#trivBlueLight)"/></svg></div>
+          <div class="w-10 h-10"><svg viewBox="0 0 64 64" class="w-full h-full"><path d="M4 8 L60 8 L52 22 L40 22 L40 56 L24 56 L24 22 L12 22 Z" fill="url(#trivLogo)"/><path d="M40 22 L40 56 L24 56 L24 38 Z" fill="url(#trivLogoDark)" opacity="0.6"/></svg></div>
           <span class="text-2xl font-bold text-white tracking-tight">TRIVIUM</span>
         </div>
         <button onclick="openConfig()" class="text-xs text-slate-400 hover:text-white flex items-center gap-1" title="Configurar Supabase"><i data-lucide="settings" class="w-3.5 h-3.5"></i><span id="cfgStatus">Demo</span></button>
@@ -207,7 +180,7 @@
   <div class="hidden lg:flex w-1/2 bg-trivium-900 relative overflow-hidden items-center justify-center p-12">
     <div class="absolute inset-0 opacity-30" style="background-image: radial-gradient(circle at 25% 25%, #2563EB 0%, transparent 50%), radial-gradient(circle at 75% 75%, #1D4ED8 0%, transparent 50%);"></div>
     <div class="relative z-10 text-white max-w-md">
-      <div class="w-20 h-20 mb-8"><svg viewBox="0 0 64 64" class="w-full h-full"><polygon points="6,14 32,14 32,26 22,26 22,20 6,20" fill="url(#trivBlueLight)"/><polygon points="32,14 58,14 50,22 42,22 32,26" fill="url(#trivBlueMid)"/><polygon points="6,20 22,20 22,26 28,52 16,42" fill="url(#trivBlueDark)" opacity="0.85"/><polygon points="22,26 32,26 42,22 38,50 32,58 28,52" fill="url(#trivSilver)"/><polygon points="42,22 50,22 38,50" fill="url(#trivBlueLight)"/></svg></div>
+      <div class="w-20 h-20 mb-8"><svg viewBox="0 0 64 64" class="w-full h-full"><path d="M4 8 L60 8 L52 22 L40 22 L40 56 L24 56 L24 22 L12 22 Z" fill="url(#trivLogo)"/><path d="M40 22 L40 56 L24 56 L24 38 Z" fill="url(#trivLogoDark)" opacity="0.6"/></svg></div>
       <h2 class="text-4xl font-bold mb-4 leading-tight">Crescimento movido por inteligência</h2>
       <p class="text-slate-300 text-lg leading-relaxed mb-8">Automação comercial inteligente para gerar mais leads, mais conversas e mais clientes pro seu negócio.</p>
       <div class="grid grid-cols-3 gap-4">
@@ -237,7 +210,7 @@
   <aside class="w-60 gradient-dark text-white flex flex-col border-r border-slate-800">
     <div class="p-5 border-b border-slate-800/50">
       <div class="flex items-center gap-2.5">
-        <div class="w-8 h-8"><svg viewBox="0 0 64 64" class="w-full h-full"><polygon points="6,14 32,14 32,26 22,26 22,20 6,20" fill="url(#trivBlueLight)"/><polygon points="32,14 58,14 50,22 42,22 32,26" fill="url(#trivBlueMid)"/><polygon points="6,20 22,20 22,26 28,52 16,42" fill="url(#trivBlueDark)" opacity="0.85"/><polygon points="22,26 32,26 42,22 38,50 32,58 28,52" fill="url(#trivSilver)"/><polygon points="42,22 50,22 38,50" fill="url(#trivBlueLight)"/></svg></div>
+        <div class="w-8 h-8"><svg viewBox="0 0 64 64" class="w-full h-full"><path d="M4 8 L60 8 L52 22 L40 22 L40 56 L24 56 L24 22 L12 22 Z" fill="url(#trivLogo)"/><path d="M40 22 L40 56 L24 56 L24 38 Z" fill="url(#trivLogoDark)" opacity="0.6"/></svg></div>
         <span class="text-lg font-bold tracking-tight">TRIVIUM</span>
       </div>
     </div>
