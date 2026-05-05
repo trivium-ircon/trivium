@@ -318,35 +318,33 @@
           <div class="bg-white rounded-xl p-5 border border-slate-200 hover:shadow-sm transition">
             <div class="flex items-center justify-between mb-3">
               <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center"><i data-lucide="users" class="w-5 h-5 text-trivium-blue"></i></div>
-              <span class="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">+18%</span>
             </div>
-            <div class="text-2xl font-bold text-slate-900">2.456</div>
+            <div class="text-2xl font-bold text-slate-900" id="kpiLeads">0</div>
             <div class="text-xs text-slate-500 mt-0.5">Leads ativos</div>
           </div>
           <div class="bg-white rounded-xl p-5 border border-slate-200 hover:shadow-sm transition">
             <div class="flex items-center justify-between mb-3">
               <div class="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center"><i data-lucide="message-circle" class="w-5 h-5 text-purple-600"></i></div>
-              <span class="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">+24%</span>
             </div>
-            <div class="text-2xl font-bold text-slate-900">1.289</div>
+            <div class="text-2xl font-bold text-slate-900" id="kpiConversas">0</div>
             <div class="text-xs text-slate-500 mt-0.5">Conversas iniciadas</div>
           </div>
-          <div class="bg-white rounded-xl p-5 border border-slate-200 hover:shadow-sm transition">
+          <button onclick="openReunioesModal()" class="bg-white rounded-xl p-5 border border-slate-200 hover:shadow-md hover:border-orange-300 transition text-left group">
             <div class="flex items-center justify-between mb-3">
               <div class="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center"><i data-lucide="calendar-check" class="w-5 h-5 text-orange-600"></i></div>
-              <span class="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">+12%</span>
+              <i data-lucide="arrow-up-right" class="w-4 h-4 text-slate-300 group-hover:text-orange-500"></i>
             </div>
-            <div class="text-2xl font-bold text-slate-900">87</div>
-            <div class="text-xs text-slate-500 mt-0.5">Reuniões marcadas</div>
-          </div>
-          <div class="bg-white rounded-xl p-5 border border-slate-200 hover:shadow-sm transition">
+            <div class="text-2xl font-bold text-slate-900" id="kpiReunioes">0</div>
+            <div class="text-xs text-slate-500 mt-0.5">Reuniões marcadas <span class="text-orange-600 font-medium">· clique pra ver</span></div>
+          </button>
+          <button onclick="openLigacoesModal()" class="bg-white rounded-xl p-5 border border-slate-200 hover:shadow-md hover:border-yellow-300 transition text-left group">
             <div class="flex items-center justify-between mb-3">
-              <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center"><i data-lucide="trending-up" class="w-5 h-5 text-green-600"></i></div>
-              <span class="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">+5%</span>
+              <div class="w-10 h-10 rounded-lg bg-yellow-50 flex items-center justify-center"><i data-lucide="phone" class="w-5 h-5 text-yellow-700"></i></div>
+              <i data-lucide="arrow-up-right" class="w-4 h-4 text-slate-300 group-hover:text-yellow-600"></i>
             </div>
-            <div class="text-2xl font-bold text-slate-900">23%</div>
-            <div class="text-xs text-slate-500 mt-0.5">Taxa de conversão</div>
-          </div>
+            <div class="text-2xl font-bold text-slate-900" id="kpiLigacoes">0</div>
+            <div class="text-xs text-slate-500 mt-0.5">Ligações pendentes <span class="text-yellow-600 font-medium">· clique pra ver</span></div>
+          </button>
         </div>
 
         <!-- Chart + Origens -->
@@ -367,28 +365,7 @@
           <div class="bg-white rounded-xl border border-slate-200 p-6">
             <h3 class="font-semibold text-slate-900 mb-1">Origem dos leads</h3>
             <p class="text-xs text-slate-500 mb-5">Distribuição da base atual</p>
-            <div class="space-y-3.5">
-              <div>
-                <div class="flex justify-between text-sm mb-1.5"><span class="font-medium">Importação Excel</span><span class="text-slate-500">1.248</span></div>
-                <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-trivium-blue rounded-full" style="width:62%"></div></div>
-              </div>
-              <div>
-                <div class="flex justify-between text-sm mb-1.5"><span class="font-medium">Google Places</span><span class="text-slate-500">806</span></div>
-                <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-purple-500 rounded-full" style="width:40%"></div></div>
-              </div>
-              <div>
-                <div class="flex justify-between text-sm mb-1.5"><span class="font-medium">Indicação</span><span class="text-slate-500">234</span></div>
-                <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-orange-500 rounded-full" style="width:12%"></div></div>
-              </div>
-              <div>
-                <div class="flex justify-between text-sm mb-1.5"><span class="font-medium">Parceiros</span><span class="text-slate-500">98</span></div>
-                <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-green-500 rounded-full" style="width:8%"></div></div>
-              </div>
-              <div>
-                <div class="flex justify-between text-sm mb-1.5"><span class="font-medium">Outros</span><span class="text-slate-500">70</span></div>
-                <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-slate-400 rounded-full" style="width:6%"></div></div>
-              </div>
-            </div>
+            <div id="origemList" class="space-y-3.5"></div>
           </div>
         </div>
 
@@ -399,65 +376,15 @@
               <h3 class="font-semibold text-slate-900">Atividade recente</h3>
               <button onclick="goTo('inbox')" class="text-xs text-trivium-blue hover:underline">Ver tudo →</button>
             </div>
-            <div class="divide-y divide-slate-100">
-              <div class="p-4 flex items-start gap-3 hover:bg-slate-50 cursor-pointer">
-                <div class="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-medium text-sm flex-shrink-0">CV</div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center justify-between"><span class="font-medium text-sm">Clínica Vida Plena</span><span class="text-xs text-slate-400">há 12min</span></div>
-                  <p class="text-sm text-slate-600 mt-0.5">Tem interesse sim. Pode me passar mais detalhes?</p>
-                  <span class="inline-block mt-1.5 text-[10px] font-semibold uppercase tracking-wide text-green-700 bg-green-100 px-1.5 py-0.5 rounded">Interessado</span>
-                </div>
-              </div>
-              <div class="p-4 flex items-start gap-3 hover:bg-slate-50 cursor-pointer">
-                <div class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-medium text-sm flex-shrink-0">DR</div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center justify-between"><span class="font-medium text-sm">Dra. Renata Cardiologista</span><span class="text-xs text-slate-400">há 38min</span></div>
-                  <p class="text-sm text-slate-600 mt-0.5">Reunião agendada para amanhã às 14h</p>
-                  <span class="inline-block mt-1.5 text-[10px] font-semibold uppercase tracking-wide text-orange-700 bg-orange-100 px-1.5 py-0.5 rounded">Reunião</span>
-                </div>
-              </div>
-              <div class="p-4 flex items-start gap-3 hover:bg-slate-50 cursor-pointer">
-                <div class="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-medium text-sm flex-shrink-0">AS</div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center justify-between"><span class="font-medium text-sm">Advocacia Silva & Pereira</span><span class="text-xs text-slate-400">há 1h</span></div>
-                  <p class="text-sm text-slate-600 mt-0.5">Quanto custa o serviço mensal?</p>
-                  <span class="inline-block mt-1.5 text-[10px] font-semibold uppercase tracking-wide text-yellow-700 bg-yellow-100 px-1.5 py-0.5 rounded">Dúvida</span>
-                </div>
-              </div>
-              <div class="p-4 flex items-start gap-3 hover:bg-slate-50 cursor-pointer">
-                <div class="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center text-orange-700 font-medium text-sm flex-shrink-0">PE</div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center justify-between"><span class="font-medium text-sm">Padaria do Edu</span><span class="text-xs text-slate-400">há 2h</span></div>
-                  <p class="text-sm text-slate-600 mt-0.5">Já tenho contador, mas pode me mandar proposta</p>
-                  <span class="inline-block mt-1.5 text-[10px] font-semibold uppercase tracking-wide text-green-700 bg-green-100 px-1.5 py-0.5 rounded">Interessado</span>
-                </div>
-              </div>
-            </div>
+            <div id="atividadeRecente" class="divide-y divide-slate-100"></div>
           </div>
 
           <div class="bg-white rounded-xl border border-slate-200">
             <div class="p-6 border-b border-slate-100 flex items-center justify-between">
               <h3 class="font-semibold text-slate-900">Próximas reuniões</h3>
-              <span class="text-xs text-slate-500">5 agendadas</span>
+              <button onclick="openReunioesModal()" class="text-xs text-trivium-blue hover:underline">Ver tudo →</button>
             </div>
-            <div class="divide-y divide-slate-100">
-              <div class="p-4 hover:bg-slate-50">
-                <div class="flex items-center justify-between mb-1.5"><span class="font-medium text-sm">Dra. Renata Cardiologista</span><span class="text-xs font-semibold text-trivium-blue">Amanhã, 14:00</span></div>
-                <div class="flex items-center gap-2 text-xs text-slate-500"><i data-lucide="video" class="w-3 h-3"></i>Google Meet · 30min</div>
-              </div>
-              <div class="p-4 hover:bg-slate-50">
-                <div class="flex items-center justify-between mb-1.5"><span class="font-medium text-sm">Clínica Vida Plena</span><span class="text-xs font-semibold text-slate-700">Sex, 10:30</span></div>
-                <div class="flex items-center gap-2 text-xs text-slate-500"><i data-lucide="phone" class="w-3 h-3"></i>Ligação · 20min</div>
-              </div>
-              <div class="p-4 hover:bg-slate-50">
-                <div class="flex items-center justify-between mb-1.5"><span class="font-medium text-sm">Padaria do Edu</span><span class="text-xs font-semibold text-slate-700">Seg, 16:00</span></div>
-                <div class="flex items-center gap-2 text-xs text-slate-500"><i data-lucide="map-pin" class="w-3 h-3"></i>Presencial · 45min</div>
-              </div>
-              <div class="p-4 hover:bg-slate-50">
-                <div class="flex items-center justify-between mb-1.5"><span class="font-medium text-sm">Estúdio Pilates Bella</span><span class="text-xs font-semibold text-slate-700">Ter, 09:00</span></div>
-                <div class="flex items-center gap-2 text-xs text-slate-500"><i data-lucide="video" class="w-3 h-3"></i>Zoom · 30min</div>
-              </div>
-            </div>
+            <div id="proximasReunioes" class="divide-y divide-slate-100"></div>
           </div>
         </div>
       </section>
@@ -1073,6 +1000,44 @@
     </div>
   </div>
 
+  <!-- Reuniões Marcadas Modal -->
+  <div id="reunioesModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-thin">
+      <div class="sticky top-0 bg-white border-b border-slate-100 p-5 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center"><i data-lucide="calendar-check" class="w-5 h-5 text-orange-600"></i></div>
+          <div>
+            <h3 class="text-lg font-bold">Reuniões agendadas</h3>
+            <p class="text-xs text-slate-500" id="reunioesSubtitle">—</p>
+          </div>
+        </div>
+        <button onclick="document.getElementById('reunioesModal').classList.add('hidden')" class="p-1 hover:bg-slate-100 rounded"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-6">
+        <div id="reunioesLista" class="space-y-3"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ligações Pendentes Modal -->
+  <div id="ligacoesModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-thin">
+      <div class="sticky top-0 bg-white border-b border-slate-100 p-5 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center"><i data-lucide="phone" class="w-5 h-5 text-yellow-700"></i></div>
+          <div>
+            <h3 class="text-lg font-bold">Ligações pendentes</h3>
+            <p class="text-xs text-slate-500" id="ligacoesSubtitle">Leads que responderam e aguardam seu retorno</p>
+          </div>
+        </div>
+        <button onclick="document.getElementById('ligacoesModal').classList.add('hidden')" class="p-1 hover:bg-slate-100 rounded"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-6">
+        <div id="ligacoesLista" class="space-y-3"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Enviar WhatsApp Modal -->
   <div id="waSendModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-thin">
@@ -1362,21 +1327,10 @@
 <!-- DATA + LOGIC                                  -->
 <!-- ============================================ -->
 <script>
-// ============== MOCK DATA ==============
-const LEADS = [
-  { empresa:'Clínica Vida Plena', tel:'(11) 99988-7766', cidade:'São Paulo/SP', seg:'Clínica', orig:'Manual', status:'Respondeu', tag:'purple', last:'há 12min' },
-  { empresa:'Dra. Renata Cardiologista', tel:'(21) 97777-5544', cidade:'Rio de Janeiro/RJ', seg:'Médico', orig:'Google', status:'Reunião', tag:'orange', last:'há 38min' },
-  { empresa:'Advocacia Silva & Pereira', tel:'(11) 98876-3322', cidade:'Campinas/SP', seg:'Advogado', orig:'Manual', status:'Respondeu', tag:'purple', last:'há 1h' },
-  { empresa:'Padaria do Edu', tel:'(11) 95544-1100', cidade:'São Paulo/SP', seg:'Padaria', orig:'Parceiro', status:'Respondeu', tag:'purple', last:'há 2h' },
-  { empresa:'Estúdio Pilates Bella', tel:'(11) 99123-4567', cidade:'Santos/SP', seg:'Estúdio', orig:'Instagram', status:'Contatado', tag:'blue', last:'há 3h' },
-  { empresa:'Dr. Carlos Oliveira', tel:'(31) 98765-4321', cidade:'Belo Horizonte/MG', seg:'Médico', orig:'Google', status:'Contatado', tag:'blue', last:'há 5h' },
-  { empresa:'Dental Clean Odontologia', tel:'(11) 94567-8910', cidade:'Guarulhos/SP', seg:'Clínica', orig:'Manual', status:'Cliente', tag:'green', last:'há 1 dia' },
-  { empresa:'Salão Beleza Pura', tel:'(11) 93210-7654', cidade:'São Paulo/SP', seg:'Estética', orig:'Base antiga', status:'Novo', tag:'slate', last:'—' },
-  { empresa:'Pet Shop Amigo Fiel', tel:'(11) 98899-1122', cidade:'Osasco/SP', seg:'Pet Shop', orig:'Google', status:'Novo', tag:'slate', last:'—' },
-  { empresa:'Dr. Marcelo Pediatra', tel:'(11) 99655-4433', cidade:'Santo André/SP', seg:'Médico', orig:'Indicação', status:'Reunião', tag:'orange', last:'há 1 dia' },
-  { empresa:'Restaurante Sabor da Casa', tel:'(11) 97788-9900', cidade:'São Paulo/SP', seg:'Restaurante', orig:'Manual', status:'Perdido', tag:'red', last:'há 2 dias' },
-  { empresa:'Academia Forma Corpo', tel:'(11) 96655-3344', cidade:'Diadema/SP', seg:'Academia', orig:'Google', status:'Cliente', tag:'green', last:'há 3 dias' },
-];
+// ============== DADOS REAIS (vazios por padrão) ==============
+const LEADS = [];
+let APPOINTMENTS_REAIS = [];
+let MESSAGES_RECENTES = [];
 
 const TAG_CLASSES = {
   slate: 'bg-slate-100 text-slate-700',
@@ -1396,12 +1350,7 @@ const KANBAN_COLS = [
   { key:'Perdido', color:'red', count:0 },
 ];
 
-const CAMPANHAS = [
-  { nome:'Médicos São Paulo - Maio', status:'Em execução', leads:320, enviados:218, respostas:47, taxa:21, cor:'blue' },
-  { nome:'Advogados Campinas', status:'Concluída', leads:180, enviados:180, respostas:39, taxa:22, cor:'green' },
-  { nome:'Clínicas RJ - Q2', status:'Pausada', leads:240, enviados:88, respostas:14, taxa:16, cor:'yellow' },
-  { nome:'Restaurantes Zona Sul', status:'Rascunho', leads:0, enviados:0, respostas:0, taxa:0, cor:'slate' },
-];
+const CAMPANHAS = [];
 
 const TEMPLATES = [
   { nome:'Abordagem inicial - Médicos', tipo:'Inicial', uso:124, conteudo:'Olá {{saudacao}}! Tudo bem? Vi que vocês são uma {{segmento}} em {{cidade}} e gostaria de me apresentar. Sou contador especialista em clínicas médicas e ajudo a deixar fiscal e trabalhista 100% organizado, sem dor de cabeça. Faz sentido conversarmos 15 minutos esta semana?' },
@@ -1411,14 +1360,7 @@ const TEMPLATES = [
   { nome:'Follow-up D+7', tipo:'Follow-up 2', uso:198, conteudo:'Oi {{saudacao}}! Última mensagem por aqui pra não atrapalhar. Se quiser conversar em outro momento, é só chamar. Sucesso! 🙏' },
 ];
 
-const INBOX = [
-  { empresa:'Clínica Vida Plena', msg:'Tem interesse sim. Pode me passar mais detalhes? Quanto custa?', tag:'green', label:'Interessado', time:'há 12min' },
-  { empresa:'Dra. Renata Cardiologista', msg:'Beleza, vamos marcar amanhã 14h então. Manda o link.', tag:'orange', label:'Reunião', time:'há 38min' },
-  { empresa:'Advocacia Silva & Pereira', msg:'Quanto custa o serviço mensal? Vocês fazem departamento pessoal?', tag:'yellow', label:'Dúvida', time:'há 1h' },
-  { empresa:'Padaria do Edu', msg:'Já tenho contador, mas pode me mandar proposta. Sempre bom comparar.', tag:'green', label:'Interessado', time:'há 2h' },
-  { empresa:'Estúdio Pilates Bella', msg:'Vou conversar com meu sócio e te retorno!', tag:'yellow', label:'Dúvida', time:'há 3h' },
-  { empresa:'Restaurante Sabor da Casa', msg:'Não tenho interesse, obrigado.', tag:'red', label:'Não interessado', time:'há 5h' },
-];
+const INBOX = [];
 
 const LABEL_COLORS = {
   green: 'bg-green-100 text-green-700',
@@ -1627,15 +1569,19 @@ async function enterApp(user) {
   document.getElementById('screen-app').classList.add('flex');
   goTo('dashboard');
 
-  // Carrega leads do banco (se conectado ao Supabase)
+  // Carrega dados do banco (se conectado ao Supabase)
   if (sb) {
-    try { await carregarLeads(); } catch(e) { console.warn('carregarLeads', e); }
+    try {
+      await Promise.all([
+        carregarLeads(),
+        carregarAppointments(),
+        carregarMessagesRecentes(),
+      ]);
+    } catch(e) { console.warn('carregar dados', e); }
   }
 
-  setTimeout(() => {
-    document.getElementById('toast').classList.remove('hidden');
-    setTimeout(() => document.getElementById('toast').classList.add('hidden'), 5000);
-  }, 2500);
+  // Atualiza todas as telas com dados reais (ou empty states)
+  atualizarTelas();
 }
 
 async function logout() {
@@ -1665,6 +1611,18 @@ function simulateImport() {
 // ============== RENDER FUNCTIONS ==============
 function renderLeadsTable() {
   const tbody = document.getElementById('leadsTable');
+  if (LEADS.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-16 text-center">
+      <i data-lucide="users" class="w-12 h-12 mx-auto text-slate-300 mb-3"></i>
+      <p class="text-slate-500 font-medium">Você ainda não tem leads</p>
+      <p class="text-xs text-slate-400 mb-4">Importe sua primeira lista de Excel pra começar</p>
+      <button onclick="goTo('importar')" class="bg-trivium-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-trivium-blue-dark inline-flex items-center gap-2">
+        <i data-lucide="upload" class="w-4 h-4"></i>Importar leads
+      </button>
+    </td></tr>`;
+    lucide.createIcons();
+    return;
+  }
   tbody.innerHTML = LEADS.map(l => `
     <tr class="hover:bg-slate-50">
       <td class="px-4 py-3"><input type="checkbox" /></td>
@@ -1750,6 +1708,16 @@ async function dropLead(e, col) {
 
 function renderInbox() {
   const list = document.getElementById('inboxList');
+  if (!list) return;
+  if (INBOX.length === 0) {
+    list.innerHTML = `<div class="bg-white border border-slate-200 rounded-xl p-12 text-center">
+      <i data-lucide="inbox" class="w-12 h-12 mx-auto text-slate-300 mb-3"></i>
+      <p class="text-slate-500 font-medium mb-1">Nenhuma resposta ainda</p>
+      <p class="text-xs text-slate-400">Quando os leads responderem, aparecem aqui</p>
+    </div>`;
+    lucide.createIcons();
+    return;
+  }
   list.innerHTML = INBOX.map(m => `
     <div class="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-sm cursor-pointer" onclick="goTo('leadDetail')">
       <div class="flex items-center justify-between mb-1">
@@ -1764,6 +1732,17 @@ function renderInbox() {
 
 function renderCampanhas() {
   const list = document.getElementById('campanhasList');
+  if (!list) return;
+  if (CAMPANHAS.length === 0) {
+    list.innerHTML = `<div class="bg-white border border-slate-200 rounded-xl p-12 text-center">
+      <i data-lucide="send" class="w-12 h-12 mx-auto text-slate-300 mb-3"></i>
+      <p class="text-slate-500 font-medium mb-1">Nenhuma campanha criada</p>
+      <p class="text-xs text-slate-400 mb-4">Campanhas servem pra disparar mensagens em massa pra grupos de leads</p>
+      <p class="text-xs text-slate-400">Por enquanto, use o botão WhatsApp em cada lead da tabela</p>
+    </div>`;
+    lucide.createIcons();
+    return;
+  }
   const STATUS_COLORS = {
     blue:'bg-blue-100 text-blue-700', green:'bg-green-100 text-green-700',
     yellow:'bg-yellow-100 text-yellow-700', slate:'bg-slate-100 text-slate-700'
@@ -2065,12 +2044,7 @@ async function carregarLeads() {
 
 // Atualiza tabela de leads + Kanban com dados do banco
 function atualizarTelas() {
-  if (LEADS_REAIS.length === 0) {
-    // Mantém os mocks pra exibição inicial se ainda não importou nada
-    return;
-  }
-
-  // Substitui o array global usado pelas telas
+  // Sempre limpa LEADS (sem fallback pra mocks)
   LEADS.length = 0;
   LEADS_REAIS.forEach(l => {
     const statusMap = {
@@ -2101,6 +2075,10 @@ function atualizarTelas() {
 
   renderLeadsTable();
   renderKanban();
+  renderInbox();
+  renderCampanhas();
+  renderTemplates();
+  renderDashboard();
 }
 
 function formatRelativeTime(iso) {
@@ -2306,6 +2284,233 @@ async function salvarRespondeu() {
   showToastInfo('✓ Resposta registrada');
 }
 
+// ============== DASHBOARD DINÂMICO ==============
+async function carregarAppointments() {
+  if (!sb || !currentUser) return;
+  const { data } = await sb.from('appointments')
+    .select('*, leads(nome_empresa, nome_responsavel, telefone, telefone_original)')
+    .eq('status', 'agendada')
+    .order('data_hora', { ascending: true });
+  APPOINTMENTS_REAIS = data || [];
+}
+
+async function carregarMessagesRecentes() {
+  if (!sb || !currentUser) return;
+  const { data } = await sb.from('messages')
+    .select('*, leads(nome_empresa, nome_responsavel)')
+    .eq('direcao', 'recebida')
+    .order('enviada_em', { ascending: false })
+    .limit(10);
+  MESSAGES_RECENTES = data || [];
+}
+
+function renderDashboard() {
+  // KPIs calculados dos leads
+  const total = LEADS.length;
+  const contatados = LEADS.filter(l => l.status === 'Contatado' || l.status === 'Respondeu' || l.status === 'Reunião' || l.status === 'Cliente').length;
+  const responderam = LEADS.filter(l => l.status === 'Respondeu' || l.status === 'Reunião' || l.status === 'Cliente').length;
+  const reunioes = APPOINTMENTS_REAIS.filter(a => new Date(a.data_hora) >= new Date()).length;
+  const ligacoes = LEADS.filter(l => l.status === 'Respondeu').length;
+
+  setText('kpiLeads', total);
+  setText('kpiConversas', contatados);
+  setText('kpiReunioes', reunioes);
+  setText('kpiLigacoes', ligacoes);
+
+  // Origem dos leads
+  renderOrigemList();
+  // Atividade recente
+  renderAtividadeRecente();
+  // Próximas reuniões
+  renderProximasReunioes();
+}
+
+function setText(id, txt) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = txt;
+}
+
+function renderOrigemList() {
+  const list = document.getElementById('origemList');
+  if (!list) return;
+  if (LEADS.length === 0) {
+    list.innerHTML = `<div class="text-center py-8 text-sm text-slate-400">
+      <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
+      <p>Sem leads ainda</p>
+      <button onclick="goTo('importar')" class="mt-2 text-trivium-blue hover:underline text-xs font-medium">Importar primeira lista →</button>
+    </div>`;
+    lucide.createIcons();
+    return;
+  }
+  const counts = {};
+  LEADS.forEach(l => {
+    const o = l.orig || 'Outros';
+    counts[o] = (counts[o] || 0) + 1;
+  });
+  const total = LEADS.length;
+  const cores = ['bg-trivium-blue','bg-purple-500','bg-orange-500','bg-green-500','bg-slate-400'];
+  list.innerHTML = Object.entries(counts).sort((a,b) => b[1]-a[1]).map(([nome, qtd], i) => {
+    const pct = Math.round((qtd / total) * 100);
+    return `<div>
+      <div class="flex justify-between text-sm mb-1.5"><span class="font-medium">${nome}</span><span class="text-slate-500">${qtd}</span></div>
+      <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full ${cores[i % cores.length]} rounded-full" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderAtividadeRecente() {
+  const list = document.getElementById('atividadeRecente');
+  if (!list) return;
+  if (MESSAGES_RECENTES.length === 0) {
+    list.innerHTML = `<div class="text-center py-12 text-sm text-slate-400">
+      <i data-lucide="message-circle" class="w-10 h-10 mx-auto mb-2 text-slate-300"></i>
+      <p>Sem respostas ainda</p>
+      <p class="text-xs mt-1">Quando os leads responderem, vai aparecer aqui</p>
+    </div>`;
+    lucide.createIcons();
+    return;
+  }
+  const tagColors = {
+    interessado: { bg:'bg-green-100', text:'text-green-700', avatar:'bg-green-100 text-green-700', label:'Interessado' },
+    duvida: { bg:'bg-yellow-100', text:'text-yellow-700', avatar:'bg-yellow-100 text-yellow-700', label:'Dúvida' },
+    nao_interessado: { bg:'bg-red-100', text:'text-red-700', avatar:'bg-red-100 text-red-700', label:'Não interessado' },
+    opt_out: { bg:'bg-slate-100', text:'text-slate-700', avatar:'bg-slate-100 text-slate-700', label:'Saiu' },
+  };
+  list.innerHTML = MESSAGES_RECENTES.slice(0, 5).map(m => {
+    const empresa = m.leads?.nome_empresa || '—';
+    const resp = m.leads?.nome_responsavel ? ` · ${m.leads.nome_responsavel}` : '';
+    const t = tagColors[m.classificacao_ia] || { bg:'bg-blue-100', text:'text-blue-700', avatar:'bg-blue-100 text-blue-700', label:'Recebida' };
+    const iniciais = empresa.split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase();
+    return `<div class="p-4 flex items-start gap-3 hover:bg-slate-50">
+      <div class="w-9 h-9 rounded-full ${t.avatar} flex items-center justify-center font-medium text-sm flex-shrink-0">${iniciais}</div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between"><span class="font-medium text-sm">${empresa}${resp}</span><span class="text-xs text-slate-400">${formatRelativeTime(m.enviada_em)}</span></div>
+        <p class="text-sm text-slate-600 mt-0.5 line-clamp-2">${m.conteudo}</p>
+        <span class="inline-block mt-1.5 text-[10px] font-semibold uppercase tracking-wide ${t.text} ${t.bg} px-1.5 py-0.5 rounded">${t.label}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderProximasReunioes() {
+  const list = document.getElementById('proximasReunioes');
+  if (!list) return;
+  const futuras = APPOINTMENTS_REAIS.filter(a => new Date(a.data_hora) >= new Date()).slice(0, 5);
+  if (futuras.length === 0) {
+    list.innerHTML = `<div class="text-center py-12 text-sm text-slate-400">
+      <i data-lucide="calendar" class="w-10 h-10 mx-auto mb-2 text-slate-300"></i>
+      <p>Nenhuma reunião agendada</p>
+      <p class="text-xs mt-1">Quando agendar, vai aparecer aqui</p>
+    </div>`;
+    lucide.createIcons();
+    return;
+  }
+  const iconMap = { online:'video', presencial:'map-pin', telefone:'phone' };
+  list.innerHTML = futuras.map(a => {
+    const empresa = a.leads?.nome_empresa || '—';
+    const dt = new Date(a.data_hora);
+    const data = dt.toLocaleDateString('pt-BR', { weekday:'short', day:'2-digit', month:'2-digit' });
+    const hora = dt.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+    return `<div class="p-4 hover:bg-slate-50">
+      <div class="flex items-center justify-between mb-1.5">
+        <span class="font-medium text-sm">${empresa}</span>
+        <span class="text-xs font-semibold text-trivium-blue">${data}, ${hora}</span>
+      </div>
+      <div class="flex items-center gap-2 text-xs text-slate-500">
+        <i data-lucide="${iconMap[a.modalidade] || 'video'}" class="w-3 h-3"></i>${a.modalidade || 'online'}${a.observacoes ? ' · ' + a.observacoes : ''}
+      </div>
+    </div>`;
+  }).join('');
+  lucide.createIcons();
+}
+
+// ============== MODAIS — REUNIÕES E LIGAÇÕES ==============
+function openReunioesModal() {
+  const lista = document.getElementById('reunioesLista');
+  const subtitle = document.getElementById('reunioesSubtitle');
+  const futuras = APPOINTMENTS_REAIS.filter(a => new Date(a.data_hora) >= new Date());
+
+  subtitle.textContent = futuras.length === 0 ? 'Nenhuma reunião agendada' :
+    `${futuras.length} reuniões nos próximos dias`;
+
+  if (futuras.length === 0) {
+    lista.innerHTML = `<div class="text-center py-10">
+      <i data-lucide="calendar-x" class="w-12 h-12 mx-auto text-slate-300 mb-3"></i>
+      <p class="text-slate-500">Você não tem reuniões agendadas</p>
+      <p class="text-xs text-slate-400 mt-1">Quando agendar uma, ela aparece aqui</p>
+    </div>`;
+  } else {
+    const iconMap = { online:'video', presencial:'map-pin', telefone:'phone' };
+    lista.innerHTML = futuras.map(a => {
+      const empresa = a.leads?.nome_empresa || '—';
+      const resp = a.leads?.nome_responsavel || '';
+      const tel = a.leads?.telefone_original || a.leads?.telefone || '';
+      const dt = new Date(a.data_hora);
+      const dataFmt = dt.toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+      const hora = dt.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+      const linkBtn = a.link_reuniao ? `<a href="${a.link_reuniao}" target="_blank" class="text-xs text-trivium-blue hover:underline inline-flex items-center gap-1"><i data-lucide="external-link" class="w-3 h-3"></i>Abrir reunião</a>` : '';
+      return `<div class="border border-slate-200 rounded-lg p-4 hover:shadow-sm transition">
+        <div class="flex items-start justify-between mb-2">
+          <div>
+            <div class="font-semibold text-slate-900">${empresa}</div>
+            ${resp ? `<div class="text-sm text-slate-600">com ${resp}</div>` : ''}
+          </div>
+          <span class="text-xs font-semibold text-orange-700 bg-orange-100 px-2 py-1 rounded-full">${a.modalidade || 'online'}</span>
+        </div>
+        <div class="text-sm text-trivium-blue font-medium mb-2 capitalize">${dataFmt} · ${hora}</div>
+        ${tel ? `<div class="flex items-center gap-1.5 text-xs text-slate-500 mb-1"><i data-lucide="phone" class="w-3 h-3"></i>${tel}</div>` : ''}
+        ${a.observacoes ? `<div class="text-xs text-slate-600 mt-1.5">${a.observacoes}</div>` : ''}
+        ${linkBtn ? `<div class="mt-2">${linkBtn}</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('reunioesModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function openLigacoesModal() {
+  const lista = document.getElementById('ligacoesLista');
+  const pendentes = LEADS.filter(l => l.status === 'Respondeu');
+
+  if (pendentes.length === 0) {
+    lista.innerHTML = `<div class="text-center py-10">
+      <i data-lucide="phone-off" class="w-12 h-12 mx-auto text-slate-300 mb-3"></i>
+      <p class="text-slate-500">Nenhuma ligação pendente</p>
+      <p class="text-xs text-slate-400 mt-1">Leads que respondem aparecem aqui pra você dar retorno</p>
+    </div>`;
+  } else {
+    lista.innerHTML = pendentes.map(l => {
+      const tel = l.telefone_e164 || (l._raw && l._raw.telefone) || '';
+      const telLink = tel ? `https://wa.me/${tel}` : '#';
+      return `<div class="border border-slate-200 rounded-lg p-4 hover:shadow-sm transition">
+        <div class="flex items-start justify-between mb-2">
+          <div>
+            <div class="font-semibold text-slate-900">${l.empresa}</div>
+            ${l.responsavel ? `<div class="text-sm text-slate-600">com ${l.responsavel}</div>` : ''}
+            <div class="text-xs text-slate-500 mt-0.5">${l.cidade} · ${l.seg}</div>
+          </div>
+          <span class="text-xs font-semibold text-purple-700 bg-purple-100 px-2 py-1 rounded-full">Respondeu</span>
+        </div>
+        <div class="flex items-center gap-2 mt-3">
+          <a href="${telLink}" target="_blank" class="bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-green-600 inline-flex items-center gap-1.5">
+            <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>WhatsApp
+          </a>
+          ${tel ? `<a href="tel:${tel}" class="border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 inline-flex items-center gap-1.5">
+            <i data-lucide="phone" class="w-3.5 h-3.5"></i>Ligar
+          </a>` : ''}
+          <button onclick="document.getElementById('ligacoesModal').classList.add('hidden'); openMarcarRespondeu('${l.id}');" class="border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 inline-flex items-center gap-1.5">
+            <i data-lucide="check" class="w-3.5 h-3.5"></i>Atualizar status
+          </button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('ligacoesModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+
 // Origem buttons handler — captura seleção
 function setupOrigemButtons() {
   document.querySelectorAll('.origem-btn').forEach(b => {
@@ -2324,24 +2529,17 @@ const METAS_DEFAULT = {
 };
 let metasPeriodo = 'diaria';
 
-// Valores reais (mock — depois vamos buscar do banco)
-const METAS_ATUAL = {
-  diaria: { leads: 47, taxa: 21, reunioes: 4 },
-  mensal: { leads: 1289, taxa: 23, reunioes: 87, clientes: 8 },
-  anual: { leads: 4823, taxa: 22, reunioes: 312, clientes: 31 },
+// Valores reais — agora calculados dinamicamente
+let METAS_ATUAL = {
+  diaria: { leads: 0, taxa: 0, reunioes: 0 },
+  mensal: { leads: 0, taxa: 0, reunioes: 0, clientes: 0 },
+  anual: { leads: 0, taxa: 0, reunioes: 0, clientes: 0 },
 };
 
-// Histórico mensal do ano (mock — Jan a Abr realizado, resto futuro)
-// Ano corrente, mês atual = índice 3 (Abril, considerando data de hoje)
 const ANO_CORRENTE = new Date().getFullYear();
-const MES_ATUAL = new Date().getMonth(); // 0-11
+const MES_ATUAL = new Date().getMonth();
 const MESES_LABELS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-const HISTORICO_MENSAL = [
-  { leads: 1100, reunioes: 75, clientes: 9 },
-  { leads: 1200, reunioes: 80, clientes: 8 },
-  { leads: 1234, reunioes: 70, clientes: 6 },
-  { leads: 1289, reunioes: 87, clientes: 8 }, // mês atual
-];
+let HISTORICO_MENSAL = [];
 
 function loadMetas() {
   const saved = localStorage.getItem('triv_metas');
@@ -2718,6 +2916,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderInbox();
   renderCampanhas();
   renderTemplates();
+  renderDashboard();
   setMetasPeriod('diaria');
 
   // Auth init
