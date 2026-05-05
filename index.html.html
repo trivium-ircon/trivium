@@ -504,12 +504,12 @@
               <tr class="text-left text-xs uppercase tracking-wider text-slate-500 border-b border-slate-100">
                 <th class="px-4 py-3 font-semibold"><input type="checkbox" /></th>
                 <th class="px-4 py-3 font-semibold">Empresa</th>
+                <th class="px-4 py-3 font-semibold">Responsável</th>
                 <th class="px-4 py-3 font-semibold">Telefone</th>
                 <th class="px-4 py-3 font-semibold">Cidade</th>
                 <th class="px-4 py-3 font-semibold">Segmento</th>
-                <th class="px-4 py-3 font-semibold">Origem</th>
                 <th class="px-4 py-3 font-semibold">Status</th>
-                <th class="px-4 py-3 font-semibold">Último contato</th>
+                <th class="px-4 py-3 font-semibold text-right">Ações</th>
               </tr>
             </thead>
             <tbody id="leadsTable" class="divide-y divide-slate-100"></tbody>
@@ -1073,6 +1073,101 @@
     </div>
   </div>
 
+  <!-- Enviar WhatsApp Modal -->
+  <div id="waSendModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-thin">
+      <div class="sticky top-0 bg-white border-b border-slate-100 p-5 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center"><i data-lucide="send" class="w-5 h-5 text-green-600"></i></div>
+          <div>
+            <h3 class="text-lg font-bold">Enviar mensagem</h3>
+            <p class="text-xs text-slate-500" id="waSendSubtitle">—</p>
+          </div>
+        </div>
+        <button onclick="closeWhatsAppSend()" class="p-1 hover:bg-slate-100 rounded"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-6 space-y-5">
+        <div>
+          <label class="text-sm font-medium block mb-1.5">Template</label>
+          <select id="waTemplate" onchange="atualizarPreviewWa()" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"></select>
+        </div>
+        <div>
+          <label class="text-sm font-medium block mb-1.5">Mensagem que vai ser enviada</label>
+          <textarea id="waMensagem" rows="6" class="w-full border border-slate-200 rounded-lg p-3 text-sm leading-relaxed"></textarea>
+          <p class="text-xs text-slate-500 mt-1">Você pode editar o texto antes de enviar.</p>
+        </div>
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm flex gap-2">
+          <i data-lucide="info" class="w-4 h-4 text-trivium-blue flex-shrink-0 mt-0.5"></i>
+          <div>
+            <strong>Como funciona:</strong> ao clicar em "Abrir WhatsApp", vai abrir o WhatsApp Web (ou app) com a mensagem já pronta. Você só clica <strong>Enviar</strong> lá. Depois, volta aqui e marca como enviada.
+          </div>
+        </div>
+      </div>
+      <div class="sticky bottom-0 bg-white border-t border-slate-100 p-4 flex gap-2 justify-between">
+        <button onclick="closeWhatsAppSend()" class="border border-slate-200 px-4 py-2 rounded-lg text-sm">Cancelar</button>
+        <div class="flex gap-2">
+          <a id="waOpenLink" target="_blank" href="#" class="bg-green-500 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-green-600 flex items-center gap-2">
+            <i data-lucide="external-link" class="w-4 h-4"></i>Abrir WhatsApp
+          </a>
+          <button onclick="marcarComoEnviada()" class="bg-trivium-blue text-white px-5 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
+            <i data-lucide="check" class="w-4 h-4"></i>Marcar como enviada
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Marcar Respondeu Modal -->
+  <div id="respondeuModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-xl w-full max-h-[90vh] overflow-y-auto scrollbar-thin">
+      <div class="sticky top-0 bg-white border-b border-slate-100 p-5 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center"><i data-lucide="message-square-reply" class="w-5 h-5 text-purple-600"></i></div>
+          <div>
+            <h3 class="text-lg font-bold">Lead respondeu</h3>
+            <p class="text-xs text-slate-500" id="respSubtitle">—</p>
+          </div>
+        </div>
+        <button onclick="closeRespondeu()" class="p-1 hover:bg-slate-100 rounded"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-6 space-y-5">
+        <div>
+          <label class="text-sm font-medium block mb-1.5">O que ele respondeu? (cole aqui)</label>
+          <textarea id="respTexto" rows="4" placeholder="Cole a mensagem que o lead enviou..." class="w-full border border-slate-200 rounded-lg p-3 text-sm"></textarea>
+        </div>
+        <div>
+          <label class="text-sm font-medium block mb-2">Como você classifica essa resposta?</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="setRespClassif('interessado')" data-classif="interessado" class="resp-classif-btn border border-slate-200 px-3 py-2 rounded-lg text-sm text-left hover:border-green-400">
+              <div class="font-medium text-green-700">✅ Interessado</div>
+              <div class="text-xs text-slate-500">Quer saber mais / agendar</div>
+            </button>
+            <button onclick="setRespClassif('duvida')" data-classif="duvida" class="resp-classif-btn border border-slate-200 px-3 py-2 rounded-lg text-sm text-left hover:border-yellow-400">
+              <div class="font-medium text-yellow-700">❓ Tem dúvida</div>
+              <div class="text-xs text-slate-500">Pergunta preço / condições</div>
+            </button>
+            <button onclick="setRespClassif('nao_interessado')" data-classif="nao_interessado" class="resp-classif-btn border border-slate-200 px-3 py-2 rounded-lg text-sm text-left hover:border-red-400">
+              <div class="font-medium text-red-700">❌ Não interessado</div>
+              <div class="text-xs text-slate-500">Já tem contador / não quer</div>
+            </button>
+            <button onclick="setRespClassif('opt_out')" data-classif="opt_out" class="resp-classif-btn border border-slate-200 px-3 py-2 rounded-lg text-sm text-left hover:border-slate-400">
+              <div class="font-medium text-slate-700">🚫 Pediu pra parar</div>
+              <div class="text-xs text-slate-500">Sair / parar / não mandar mais</div>
+            </button>
+          </div>
+        </div>
+        <div>
+          <label class="text-sm font-medium block mb-1.5">Próximo passo (opcional)</label>
+          <input id="respProximo" placeholder="Ex: agendar reunião quinta 14h, mandar proposta, etc." class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+        </div>
+      </div>
+      <div class="sticky bottom-0 bg-white border-t border-slate-100 p-4 flex gap-2 justify-end">
+        <button onclick="closeRespondeu()" class="border border-slate-200 px-4 py-2 rounded-lg text-sm">Cancelar</button>
+        <button onclick="salvarRespondeu()" class="bg-purple-600 text-white px-5 py-2 rounded-lg text-sm font-medium">Salvar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Edit Metas Modal -->
   <div id="editMetasModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-thin">
@@ -1204,6 +1299,8 @@
           <div>
             <label class="text-xs font-medium text-slate-500 block mb-1.5">Variáveis disponíveis (clique para inserir)</label>
             <div class="flex flex-wrap gap-1.5">
+              <button onclick="insertVar('{{saudacao}}')" class="text-xs bg-purple-50 text-purple-700 border border-purple-200 px-2 py-1 rounded hover:bg-purple-100" title="Usa nome do responsável; se vazio, usa nome da empresa">{{saudacao}}</button>
+              <button onclick="insertVar('{{nome_responsavel}}')" class="text-xs bg-blue-50 text-trivium-blue border border-blue-200 px-2 py-1 rounded hover:bg-blue-100">{{nome_responsavel}}</button>
               <button onclick="insertVar('{{nome_empresa}}')" class="text-xs bg-blue-50 text-trivium-blue border border-blue-200 px-2 py-1 rounded hover:bg-blue-100">{{nome_empresa}}</button>
               <button onclick="insertVar('{{cidade}}')" class="text-xs bg-blue-50 text-trivium-blue border border-blue-200 px-2 py-1 rounded hover:bg-blue-100">{{cidade}}</button>
               <button onclick="insertVar('{{estado}}')" class="text-xs bg-blue-50 text-trivium-blue border border-blue-200 px-2 py-1 rounded hover:bg-blue-100">{{estado}}</button>
@@ -1307,10 +1404,11 @@ const CAMPANHAS = [
 ];
 
 const TEMPLATES = [
-  { nome:'Abordagem inicial - Médicos', tipo:'Inicial', uso:124, conteudo:'Olá! Vi que vocês são uma {{segmento}} em {{cidade}}. Sou contador especialista em clínicas médicas e ajudo a deixar fiscal/trabalhista 100% organizado. Faz sentido conversarmos 15min?' },
-  { nome:'Abordagem inicial - Advogados', tipo:'Inicial', uso:89, conteudo:'Olá {{nome_empresa}}! Sou contador focado em escritórios de advocacia. Já organizei a contabilidade de vários colegas advogados. Posso te explicar em 15min?' },
-  { nome:'Follow-up D+3', tipo:'Follow-up 1', uso:312, conteudo:'Oi! Te mandei mensagem semana passada sobre os serviços de contabilidade. Conseguiu pensar? Estou à disposição para tirar qualquer dúvida.' },
-  { nome:'Follow-up D+7', tipo:'Follow-up 2', uso:198, conteudo:'Tudo bem? Última mensagem por aqui. Se quiser conversar depois, é só chamar! Abraços.' },
+  { nome:'Abordagem inicial - Médicos', tipo:'Inicial', uso:124, conteudo:'Olá {{saudacao}}! Tudo bem? Vi que vocês são uma {{segmento}} em {{cidade}} e gostaria de me apresentar. Sou contador especialista em clínicas médicas e ajudo a deixar fiscal e trabalhista 100% organizado, sem dor de cabeça. Faz sentido conversarmos 15 minutos esta semana?' },
+  { nome:'Abordagem inicial - Advogados', tipo:'Inicial', uso:89, conteudo:'Olá {{saudacao}}! Sou contador focado em escritórios de advocacia. Já organizei a contabilidade de vários colegas seus em {{cidade}} e consigo simplificar bastante a parte fiscal de vocês. Posso te explicar como funciona em 15 minutos?' },
+  { nome:'Abordagem inicial - Geral', tipo:'Inicial', uso:67, conteudo:'Olá {{saudacao}}! Sou contador e ajudo {{segmento}} de {{cidade}} a organizar a parte fiscal e financeira sem complicação. Você tem 15 minutinhos esta semana pra eu te explicar como posso ajudar a {{nome_empresa}}?' },
+  { nome:'Follow-up D+3', tipo:'Follow-up 1', uso:312, conteudo:'Oi {{saudacao}}, tudo bem? Te mandei mensagem alguns dias atrás sobre os serviços de contabilidade. Conseguiu dar uma pensada? Tô à disposição pra qualquer dúvida.' },
+  { nome:'Follow-up D+7', tipo:'Follow-up 2', uso:198, conteudo:'Oi {{saudacao}}! Última mensagem por aqui pra não atrapalhar. Se quiser conversar em outro momento, é só chamar. Sucesso! 🙏' },
 ];
 
 const INBOX = [
@@ -1568,17 +1666,30 @@ function simulateImport() {
 function renderLeadsTable() {
   const tbody = document.getElementById('leadsTable');
   tbody.innerHTML = LEADS.map(l => `
-    <tr class="hover:bg-slate-50 cursor-pointer" onclick="goTo('leadDetail')">
-      <td class="px-4 py-3"><input type="checkbox" onclick="event.stopPropagation()" /></td>
-      <td class="px-4 py-3 font-medium text-slate-900">${l.empresa}</td>
+    <tr class="hover:bg-slate-50">
+      <td class="px-4 py-3"><input type="checkbox" /></td>
+      <td class="px-4 py-3 font-medium text-slate-900 cursor-pointer" onclick="goTo('leadDetail')">${l.empresa}</td>
+      <td class="px-4 py-3 text-slate-700">${l.responsavel || '<span class="text-slate-400 italic">—</span>'}</td>
       <td class="px-4 py-3 text-slate-600">${l.tel}</td>
       <td class="px-4 py-3 text-slate-600">${l.cidade}</td>
       <td class="px-4 py-3 text-slate-600">${l.seg}</td>
-      <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">${l.orig}</span></td>
       <td class="px-4 py-3"><span class="text-xs font-medium px-2 py-0.5 rounded-full ${TAG_CLASSES[l.tag]}">${l.status}</span></td>
-      <td class="px-4 py-3 text-slate-500 text-xs">${l.last}</td>
+      <td class="px-4 py-3">
+        <div class="flex items-center justify-end gap-1">
+          <button onclick="openWhatsAppSend('${l.id}')" title="Enviar WhatsApp" class="p-1.5 rounded-md hover:bg-green-50 text-green-600 hover:text-green-700 transition">
+            <i data-lucide="send" class="w-4 h-4"></i>
+          </button>
+          <button onclick="openMarcarRespondeu('${l.id}')" title="Lead respondeu" class="p-1.5 rounded-md hover:bg-purple-50 text-purple-600 hover:text-purple-700 transition">
+            <i data-lucide="message-square-reply" class="w-4 h-4"></i>
+          </button>
+          <button onclick="goTo('leadDetail')" title="Detalhes" class="p-1.5 rounded-md hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition">
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </td>
     </tr>
   `).join('');
+  lucide.createIcons();
 }
 
 function renderKanban() {
@@ -1761,6 +1872,9 @@ function isWhatsAppApto(e164) {
 // Mapa flexível de nomes de colunas Excel
 const COL_MAP = {
   'nome da empresa':'nome_empresa','nome_empresa':'nome_empresa','empresa':'nome_empresa','razao social':'nome_empresa',
+  'nome do responsavel':'nome_responsavel','nome_responsavel':'nome_responsavel','responsavel':'nome_responsavel',
+  'nome do socio':'nome_responsavel','nome_socio':'nome_responsavel','socio':'nome_responsavel',
+  'contato':'nome_responsavel','pessoa':'nome_responsavel','nome':'nome_responsavel','atendente':'nome_responsavel',
   'telefone':'telefone','whatsapp':'telefone','celular':'telefone','fone':'telefone','tel':'telefone',
   'cidade':'cidade',
   'estado':'estado','uf':'estado',
@@ -1777,13 +1891,13 @@ function normalizeColKey(k) {
 function downloadTemplate() {
   if (!window.XLSX) { alert('Biblioteca Excel não carregou. Recarregue a página.'); return; }
   const data = [
-    ['nome_empresa', 'telefone', 'cidade', 'estado', 'segmento', 'email', 'observacoes'],
-    ['Clínica Vida Plena', '(11) 99999-8888', 'São Paulo', 'SP', 'Clínica', 'contato@vidaplena.com', 'Indicado pelo Dr. João'],
-    ['Advocacia Silva', '11988887777', 'Campinas', 'SP', 'Advogado', '', ''],
-    ['Dr. Carlos Cardiologista', '21977776666', 'Rio de Janeiro', 'RJ', 'Médico', '', 'Tem 2 consultórios'],
+    ['nome_empresa', 'nome_responsavel', 'telefone', 'cidade', 'estado', 'segmento', 'email', 'observacoes'],
+    ['Clínica Vida Plena', 'Dr. João Silva', '(11) 99999-8888', 'São Paulo', 'SP', 'Clínica', 'contato@vidaplena.com', 'Indicado pelo Dr. Pedro'],
+    ['Advocacia Silva & Pereira', 'Dra. Marina Silva', '11988887777', 'Campinas', 'SP', 'Advogado', '', ''],
+    ['Dr. Carlos Cardiologista', 'Dr. Carlos Mendes', '21977776666', 'Rio de Janeiro', 'RJ', 'Médico', '', 'Tem 2 consultórios'],
   ];
   const ws = XLSX.utils.aoa_to_sheet(data);
-  ws['!cols'] = [{wch:30},{wch:18},{wch:20},{wch:6},{wch:18},{wch:25},{wch:30}];
+  ws['!cols'] = [{wch:30},{wch:25},{wch:18},{wch:20},{wch:6},{wch:18},{wch:25},{wch:30}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'leads');
   XLSX.writeFile(wb, 'modelo_leads_trivium.xlsx');
@@ -1843,6 +1957,7 @@ async function handleExcelFile(event) {
 
       valid.push({
         nome_empresa: String(mapped.nome_empresa).trim(),
+        nome_responsavel: mapped.nome_responsavel ? String(mapped.nome_responsavel).trim() : null,
         telefone: phone.e164,
         telefone_original: String(mapped.telefone),
         email: mapped.email ? String(mapped.email).trim() : null,
@@ -1969,13 +2084,18 @@ function atualizarTelas() {
     LEADS.push({
       id: l.id,
       empresa: l.nome_empresa,
+      responsavel: l.nome_responsavel || '',
       tel: l.telefone_original || l.telefone,
+      telefone_e164: l.telefone,
       cidade: `${l.cidade || '—'}/${l.estado || '—'}`,
+      cidadeOnly: l.cidade || '',
+      estadoOnly: l.estado || '',
       seg: l.segmento || '—',
       orig: (l.origem || 'manual').charAt(0).toUpperCase() + (l.origem || 'manual').slice(1),
       status: statusMap[l.status_funil] || 'Novo',
       tag: tagMap[l.status_funil] || 'slate',
       last: l.ultimo_contato ? formatRelativeTime(l.ultimo_contato) : '—',
+      _raw: l,
     });
   });
 
@@ -1992,6 +2112,198 @@ function formatRelativeTime(iso) {
   if (h < 24) return `há ${h}h`;
   const dias = Math.floor(h / 24);
   return `há ${dias}d`;
+}
+
+// ============== ENVIAR WHATSAPP (semi-auto) ==============
+let waCurrentLead = null;
+let respCurrentLead = null;
+let respClassificacao = null;
+
+function preencherTemplate(texto, lead) {
+  const raw = lead._raw || {};
+  const responsavel = lead.responsavel || raw.nome_responsavel || '';
+  const empresa = lead.empresa || raw.nome_empresa || '';
+  // Saudação inteligente: usa responsável se tiver, senão empresa
+  const saudacao = responsavel ? responsavel : empresa;
+  return texto
+    .replace(/\{\{nome_empresa\}\}/g, empresa)
+    .replace(/\{\{nome_responsavel\}\}/g, responsavel || empresa)
+    .replace(/\{\{saudacao\}\}/g, saudacao)
+    .replace(/\{\{cidade\}\}/g, lead.cidadeOnly || raw.cidade || '')
+    .replace(/\{\{estado\}\}/g, lead.estadoOnly || raw.estado || '')
+    .replace(/\{\{segmento\}\}/g, (lead.seg && lead.seg !== '—') ? lead.seg : '');
+}
+
+function openWhatsAppSend(leadId) {
+  const lead = LEADS.find(l => String(l.id) === String(leadId));
+  if (!lead) { alert('Lead não encontrado'); return; }
+  waCurrentLead = lead;
+
+  document.getElementById('waSendSubtitle').textContent =
+    `${lead.empresa}${lead.responsavel ? ' · ' + lead.responsavel : ''} · ${lead.tel}`;
+
+  // Popular templates dropdown
+  const sel = document.getElementById('waTemplate');
+  sel.innerHTML = TEMPLATES.map((t,i) => `<option value="${i}">${t.nome}</option>`).join('');
+  sel.value = '0';
+
+  atualizarPreviewWa();
+  document.getElementById('waSendModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function atualizarPreviewWa() {
+  const idx = Number(document.getElementById('waTemplate').value || 0);
+  const tpl = TEMPLATES[idx];
+  if (!tpl || !waCurrentLead) return;
+  document.getElementById('waMensagem').value = preencherTemplate(tpl.conteudo, waCurrentLead);
+  atualizarLinkWa();
+}
+
+function atualizarLinkWa() {
+  if (!waCurrentLead) return;
+  const txt = document.getElementById('waMensagem').value;
+  const phone = waCurrentLead.telefone_e164 || (waCurrentLead._raw && waCurrentLead._raw.telefone) || '';
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(txt)}`;
+  document.getElementById('waOpenLink').href = url;
+}
+
+document.addEventListener('input', (e) => {
+  if (e.target && e.target.id === 'waMensagem') atualizarLinkWa();
+});
+
+function closeWhatsAppSend() {
+  document.getElementById('waSendModal').classList.add('hidden');
+  waCurrentLead = null;
+}
+
+async function marcarComoEnviada() {
+  if (!waCurrentLead) return;
+  const lead = waCurrentLead;
+  const mensagem = document.getElementById('waMensagem').value;
+
+  // Atualiza local
+  lead.status = 'Contatado';
+  lead.tag = 'blue';
+  lead.last = 'agora';
+
+  // Salva no Supabase se conectado
+  if (sb && currentUser && lead.id && !String(lead.id).startsWith('demo-')) {
+    try {
+      await sb.from('leads').update({
+        status_funil: 'contatado',
+        ultimo_contato: new Date().toISOString(),
+      }).eq('id', lead.id);
+
+      await sb.from('messages').insert({
+        user_id: currentUser.id,
+        lead_id: lead.id,
+        direcao: 'enviada',
+        conteudo: mensagem,
+      });
+    } catch(e) { console.error('marcar enviada', e); }
+  }
+
+  closeWhatsAppSend();
+  renderLeadsTable();
+  renderKanban();
+  showToastInfo('✓ Marcado como enviado');
+}
+
+// ============== MARCAR RESPONDEU ==============
+function openMarcarRespondeu(leadId) {
+  const lead = LEADS.find(l => String(l.id) === String(leadId));
+  if (!lead) { alert('Lead não encontrado'); return; }
+  respCurrentLead = lead;
+  respClassificacao = null;
+
+  document.getElementById('respSubtitle').textContent =
+    `${lead.empresa}${lead.responsavel ? ' · ' + lead.responsavel : ''}`;
+  document.getElementById('respTexto').value = '';
+  document.getElementById('respProximo').value = '';
+  document.querySelectorAll('.resp-classif-btn').forEach(b => {
+    b.classList.remove('border-green-400','border-yellow-400','border-red-400','border-slate-400','bg-slate-50');
+  });
+
+  document.getElementById('respondeuModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function setRespClassif(c) {
+  respClassificacao = c;
+  document.querySelectorAll('.resp-classif-btn').forEach(b => {
+    b.classList.remove('border-green-400','border-yellow-400','border-red-400','border-slate-400','bg-slate-50');
+  });
+  const map = { interessado:'border-green-400', duvida:'border-yellow-400', nao_interessado:'border-red-400', opt_out:'border-slate-400' };
+  const btn = document.querySelector(`.resp-classif-btn[data-classif="${c}"]`);
+  if (btn) { btn.classList.add(map[c], 'bg-slate-50'); }
+}
+
+function closeRespondeu() {
+  document.getElementById('respondeuModal').classList.add('hidden');
+  respCurrentLead = null;
+}
+
+async function salvarRespondeu() {
+  if (!respCurrentLead) return;
+  if (!respClassificacao) { alert('Escolha uma classificação primeiro'); return; }
+
+  const texto = document.getElementById('respTexto').value.trim();
+  const proximo = document.getElementById('respProximo').value.trim();
+  const lead = respCurrentLead;
+
+  // Mapa classificação → status_funil
+  const statusMap = {
+    interessado: 'respondeu',
+    duvida: 'respondeu',
+    nao_interessado: 'perdido',
+    opt_out: 'perdido',
+  };
+  const novoStatus = statusMap[respClassificacao];
+
+  // Atualiza local
+  const tagMap = { respondeu:'purple', perdido:'red' };
+  const labelMap = { respondeu:'Respondeu', perdido:'Perdido' };
+  lead.status = labelMap[novoStatus];
+  lead.tag = tagMap[novoStatus];
+  lead.last = 'agora';
+
+  // Salva no Supabase
+  if (sb && currentUser && lead.id && !String(lead.id).startsWith('demo-')) {
+    try {
+      await sb.from('leads').update({
+        status_funil: novoStatus,
+        ultimo_contato: new Date().toISOString(),
+        observacoes: proximo ?
+          `[${new Date().toLocaleDateString('pt-BR')}] Próximo passo: ${proximo}\n${(lead._raw && lead._raw.observacoes) || ''}` :
+          (lead._raw && lead._raw.observacoes) || null,
+      }).eq('id', lead.id);
+
+      if (texto) {
+        await sb.from('messages').insert({
+          user_id: currentUser.id,
+          lead_id: lead.id,
+          direcao: 'recebida',
+          conteudo: texto,
+          classificacao_ia: respClassificacao,
+        });
+      }
+
+      // Se opt_out, registra
+      if (respClassificacao === 'opt_out') {
+        await sb.from('opt_outs').insert({
+          user_id: currentUser.id,
+          telefone: lead.telefone_e164 || (lead._raw && lead._raw.telefone),
+          motivo: 'manual',
+        });
+      }
+    } catch(e) { console.error('salvar respondeu', e); }
+  }
+
+  closeRespondeu();
+  renderLeadsTable();
+  renderKanban();
+  showToastInfo('✓ Resposta registrada');
 }
 
 // Origem buttons handler — captura seleção
@@ -2363,6 +2675,8 @@ function closeEditTemplate() { document.getElementById('editTemplateModal').clas
 function renderTplPreview() {
   const txt = document.getElementById('editTplContent').value || '';
   const replaced = txt
+    .replace(/\{\{saudacao\}\}/g, 'Dr. João Silva')
+    .replace(/\{\{nome_responsavel\}\}/g, 'Dr. João Silva')
     .replace(/\{\{nome_empresa\}\}/g, 'Clínica Vida Plena')
     .replace(/\{\{cidade\}\}/g, 'São Paulo')
     .replace(/\{\{estado\}\}/g, 'SP')
