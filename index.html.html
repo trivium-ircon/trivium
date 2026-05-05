@@ -8,6 +8,7 @@
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -656,7 +657,7 @@
               <i data-lucide="download-cloud" class="w-8 h-8 text-trivium-blue mb-3"></i>
               <h3 class="font-semibold text-slate-900 mb-1">1. Baixe o modelo</h3>
               <p class="text-sm text-slate-600 mb-3">Planilha com as colunas certas e exemplos preenchidos</p>
-              <button class="text-sm font-medium text-trivium-blue hover:underline">Baixar modelo.xlsx →</button>
+              <button onclick="downloadTemplate()" class="text-sm font-medium text-trivium-blue hover:underline">Baixar modelo.xlsx →</button>
             </div>
             <div class="bg-purple-50 border border-purple-200 rounded-xl p-5">
               <i data-lucide="edit-3" class="w-8 h-8 text-purple-600 mb-3"></i>
@@ -686,9 +687,11 @@
               </div>
               <h3 class="font-semibold text-slate-900 mb-1">Arraste seu arquivo aqui</h3>
               <p class="text-sm text-slate-500 mb-4">ou clique para selecionar (apenas .xlsx, máx 10MB)</p>
-              <button onclick="simulateImport()" class="bg-trivium-blue text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-trivium-blue-dark">
+              <input type="file" id="excelFileInput" accept=".xlsx,.xls" class="hidden" onchange="handleExcelFile(event)" />
+              <button onclick="document.getElementById('excelFileInput').click()" class="bg-trivium-blue text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-trivium-blue-dark">
                 Selecionar arquivo
               </button>
+              <p id="importStatus" class="text-sm text-slate-500 mt-3 hidden"></p>
             </div>
           </div>
 
@@ -699,14 +702,18 @@
               </div>
               <div>
                 <h3 class="font-semibold text-slate-900">Importação concluída!</h3>
-                <p class="text-xs text-slate-500">leads_medicos_sp.xlsx · há alguns segundos</p>
+                <p class="text-xs text-slate-500" id="importFileName">arquivo.xlsx · há alguns segundos</p>
               </div>
             </div>
             <div class="grid grid-cols-4 gap-3 mb-5">
-              <div class="bg-slate-50 rounded-lg p-3 text-center"><div class="text-2xl font-bold">500</div><div class="text-xs text-slate-500">Total no arquivo</div></div>
-              <div class="bg-green-50 rounded-lg p-3 text-center"><div class="text-2xl font-bold text-green-700">420</div><div class="text-xs text-slate-500">Importados</div></div>
-              <div class="bg-yellow-50 rounded-lg p-3 text-center"><div class="text-2xl font-bold text-yellow-700">50</div><div class="text-xs text-slate-500">Duplicados</div></div>
-              <div class="bg-red-50 rounded-lg p-3 text-center"><div class="text-2xl font-bold text-red-700">30</div><div class="text-xs text-slate-500">Inválidos</div></div>
+              <div class="bg-slate-50 rounded-lg p-3 text-center"><div class="text-2xl font-bold" id="resTotal">0</div><div class="text-xs text-slate-500">Total no arquivo</div></div>
+              <div class="bg-green-50 rounded-lg p-3 text-center"><div class="text-2xl font-bold text-green-700" id="resImportados">0</div><div class="text-xs text-slate-500">Importados</div></div>
+              <div class="bg-yellow-50 rounded-lg p-3 text-center"><div class="text-2xl font-bold text-yellow-700" id="resDuplicados">0</div><div class="text-xs text-slate-500">Duplicados</div></div>
+              <div class="bg-red-50 rounded-lg p-3 text-center"><div class="text-2xl font-bold text-red-700" id="resInvalidos">0</div><div class="text-xs text-slate-500">Inválidos</div></div>
+            </div>
+            <div id="importErrors" class="hidden bg-red-50 border border-red-200 rounded-lg p-3 mb-4 max-h-32 overflow-y-auto scrollbar-thin">
+              <p class="text-xs font-semibold text-red-700 mb-1">Erros encontrados:</p>
+              <ul id="importErrorList" class="text-xs text-red-600 space-y-0.5"></ul>
             </div>
             <div class="flex gap-2">
               <button onclick="goTo('leads')" class="bg-trivium-blue text-white px-4 py-2 rounded-lg text-sm font-medium">Ver leads importados</button>
@@ -1505,7 +1512,7 @@ function traduzirErro(msg) {
   return msg;
 }
 
-function enterApp(user) {
+async function enterApp(user) {
   currentUser = user;
   const nome = user?.user_metadata?.nome || user?.email?.split('@')[0] || 'Usuário';
   const email = user?.email || '';
@@ -1521,6 +1528,12 @@ function enterApp(user) {
   document.getElementById('screen-app').classList.remove('hidden');
   document.getElementById('screen-app').classList.add('flex');
   goTo('dashboard');
+
+  // Carrega leads do banco (se conectado ao Supabase)
+  if (sb) {
+    try { await carregarLeads(); } catch(e) { console.warn('carregarLeads', e); }
+  }
+
   setTimeout(() => {
     document.getElementById('toast').classList.remove('hidden');
     setTimeout(() => document.getElementById('toast').classList.add('hidden'), 5000);
@@ -1603,7 +1616,7 @@ function renderKanban() {
 
 let dragged = null;
 function dragStart(e, empresa) { dragged = empresa; e.dataTransfer.effectAllowed='move'; }
-function dropLead(e, col) {
+async function dropLead(e, col) {
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
   const lead = LEADS.find(l => l.empresa === dragged);
@@ -1612,6 +1625,15 @@ function dropLead(e, col) {
     const colors = { Novo:'slate', Contatado:'blue', Respondeu:'purple', 'Reunião':'orange', Cliente:'green', Perdido:'red' };
     lead.tag = colors[col];
     renderKanban();
+
+    // Persiste no Supabase se conectado
+    if (sb && currentUser && lead.id && !String(lead.id).startsWith('demo-')) {
+      const statusDb = { Novo:'novo', Contatado:'contatado', Respondeu:'respondeu', 'Reunião':'reuniao', Cliente:'cliente', Perdido:'perdido' };
+      const { error } = await sb.from('leads')
+        .update({ status_funil: statusDb[col], ultimo_contato: new Date().toISOString() })
+        .eq('id', lead.id);
+      if (error) console.error('drop update', error);
+    }
   }
 }
 
@@ -1705,6 +1727,280 @@ function renderChart() {
       },
       interaction:{ intersect:false, mode:'index' }
     }
+  });
+}
+
+// ============== LEADS REAIS (Supabase) ==============
+let LEADS_REAIS = [];
+let importOrigem = 'manual';
+
+// Normaliza telefone brasileiro para formato E.164 (5511...)
+function normalizePhoneBR(raw) {
+  if (!raw) return { e164: null, valid: false };
+  let digits = String(raw).replace(/\D/g, '');
+  // Remove DDI 55 se vier no começo
+  if (digits.length === 13 && digits.startsWith('55')) digits = digits.slice(2);
+  if (digits.length === 12 && digits.startsWith('55')) digits = digits.slice(2);
+  // Esperamos 10 (fixo) ou 11 (celular) dígitos
+  if (digits.length < 10 || digits.length > 11) return { e164: null, valid: false };
+  // Adiciona 9 se faltar (celular antigo de 10 dígitos virando 11)
+  if (digits.length === 10 && /^[1-9][1-9]9?[6-9]/.test(digits)) {
+    digits = digits.slice(0,2) + '9' + digits.slice(2);
+  }
+  // Valida DDD (11-99)
+  const ddd = parseInt(digits.slice(0, 2));
+  if (ddd < 11 || ddd > 99) return { e164: null, valid: false };
+  return { e164: '55' + digits, valid: true };
+}
+
+function isWhatsAppApto(e164) {
+  // Celular BR: 55 + DDD(2) + 9 + 8 dígitos
+  return !!e164 && /^55\d{2}9\d{8}$/.test(e164);
+}
+
+// Mapa flexível de nomes de colunas Excel
+const COL_MAP = {
+  'nome da empresa':'nome_empresa','nome_empresa':'nome_empresa','empresa':'nome_empresa','razao social':'nome_empresa',
+  'telefone':'telefone','whatsapp':'telefone','celular':'telefone','fone':'telefone','tel':'telefone',
+  'cidade':'cidade',
+  'estado':'estado','uf':'estado',
+  'segmento':'segmento','nicho':'segmento','area':'segmento','ramo':'segmento',
+  'email':'email','e-mail':'email','mail':'email',
+  'observacoes':'observacoes','observações':'observacoes','obs':'observacoes','notas':'observacoes',
+};
+
+function normalizeColKey(k) {
+  return String(k).toLowerCase().trim()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function downloadTemplate() {
+  if (!window.XLSX) { alert('Biblioteca Excel não carregou. Recarregue a página.'); return; }
+  const data = [
+    ['nome_empresa', 'telefone', 'cidade', 'estado', 'segmento', 'email', 'observacoes'],
+    ['Clínica Vida Plena', '(11) 99999-8888', 'São Paulo', 'SP', 'Clínica', 'contato@vidaplena.com', 'Indicado pelo Dr. João'],
+    ['Advocacia Silva', '11988887777', 'Campinas', 'SP', 'Advogado', '', ''],
+    ['Dr. Carlos Cardiologista', '21977776666', 'Rio de Janeiro', 'RJ', 'Médico', '', 'Tem 2 consultórios'],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:30},{wch:18},{wch:20},{wch:6},{wch:18},{wch:25},{wch:30}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'leads');
+  XLSX.writeFile(wb, 'modelo_leads_trivium.xlsx');
+}
+
+async function handleExcelFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const status = document.getElementById('importStatus');
+  status.classList.remove('hidden');
+  status.textContent = '⏳ Lendo arquivo "' + file.name + '"...';
+
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+    if (rows.length === 0) {
+      status.textContent = '⚠️ Planilha vazia.';
+      return;
+    }
+
+    status.textContent = `⏳ Processando ${rows.length} linhas...`;
+
+    // Mapeia colunas e valida cada linha
+    const valid = [];
+    const errors = [];
+    const seenInBatch = new Set();
+    let duplicadosNoArquivo = 0;
+
+    rows.forEach((raw, i) => {
+      const linha = i + 2;
+      const mapped = {};
+      for (const k in raw) {
+        const target = COL_MAP[normalizeColKey(k)];
+        if (target) mapped[target] = raw[k];
+      }
+
+      if (!mapped.nome_empresa || !String(mapped.nome_empresa).trim()) {
+        errors.push(`Linha ${linha}: nome_empresa em branco`); return;
+      }
+      if (!mapped.telefone) {
+        errors.push(`Linha ${linha}: telefone em branco`); return;
+      }
+
+      const phone = normalizePhoneBR(mapped.telefone);
+      if (!phone.valid) {
+        errors.push(`Linha ${linha}: telefone inválido (${mapped.telefone})`); return;
+      }
+
+      if (seenInBatch.has(phone.e164)) {
+        duplicadosNoArquivo++; return;
+      }
+      seenInBatch.add(phone.e164);
+
+      valid.push({
+        nome_empresa: String(mapped.nome_empresa).trim(),
+        telefone: phone.e164,
+        telefone_original: String(mapped.telefone),
+        email: mapped.email ? String(mapped.email).trim() : null,
+        cidade: mapped.cidade ? String(mapped.cidade).trim() : null,
+        estado: mapped.estado ? String(mapped.estado).trim().toUpperCase().slice(0,2) : null,
+        segmento: mapped.segmento ? String(mapped.segmento).trim() : null,
+        observacoes: mapped.observacoes ? String(mapped.observacoes) : null,
+        whatsapp_apto: isWhatsAppApto(phone.e164),
+        origem: importOrigem,
+      });
+    });
+
+    // Verifica modo: real (Supabase) ou demo (memória)
+    if (sb && currentUser) {
+      status.textContent = `⏳ Salvando ${valid.length} leads no banco...`;
+
+      // Busca telefones já existentes pra evitar duplicado contra DB
+      const phones = valid.map(v => v.telefone);
+      const { data: existing } = await sb.from('leads').select('telefone')
+        .eq('user_id', currentUser.id).in('telefone', phones);
+      const existingSet = new Set((existing || []).map(e => e.telefone));
+
+      const novos = valid.filter(v => !existingSet.has(v.telefone));
+      const duplicadosDB = valid.length - novos.length;
+
+      // Insere em lotes de 500
+      let inseridos = 0;
+      const novosComUser = novos.map(n => ({ ...n, user_id: currentUser.id }));
+      for (let i = 0; i < novosComUser.length; i += 500) {
+        const batch = novosComUser.slice(i, i+500);
+        const { error } = await sb.from('leads').insert(batch);
+        if (!error) inseridos += batch.length;
+        else errors.push(`Erro ao salvar lote ${i}: ${error.message}`);
+      }
+
+      // Salva log da importação
+      try {
+        await sb.from('import_jobs').insert({
+          user_id: currentUser.id,
+          nome_arquivo: file.name,
+          origem: importOrigem,
+          total_linhas: rows.length,
+          importados: inseridos,
+          duplicados: duplicadosNoArquivo + duplicadosDB,
+          invalidos: errors.length,
+          status: 'concluido',
+        });
+      } catch(e) { console.warn('import_jobs falhou', e); }
+
+      mostrarResultadoImport(file.name, rows.length, inseridos, duplicadosNoArquivo + duplicadosDB, errors);
+      await carregarLeads();
+    } else {
+      // Modo demo: salva em memória
+      const novos = valid.filter(v =>
+        !LEADS_REAIS.some(l => l.telefone === v.telefone)
+      );
+      const duplicadosDB = valid.length - novos.length;
+      LEADS_REAIS.push(...novos.map(n => ({ ...n, id: 'demo-'+Math.random(), status_funil: 'novo', created_at: new Date().toISOString() })));
+      mostrarResultadoImport(file.name, rows.length, novos.length, duplicadosNoArquivo + duplicadosDB, errors);
+      atualizarTelas();
+    }
+
+  } catch (e) {
+    console.error(e);
+    status.textContent = '❌ Erro ao processar: ' + e.message;
+  }
+
+  // Reset input pra permitir upload do mesmo arquivo de novo
+  event.target.value = '';
+}
+
+function mostrarResultadoImport(nomeArquivo, total, importados, duplicados, errosArr) {
+  document.getElementById('importStatus').classList.add('hidden');
+  document.getElementById('importFileName').textContent = `${nomeArquivo} · agora`;
+  document.getElementById('resTotal').textContent = total;
+  document.getElementById('resImportados').textContent = importados;
+  document.getElementById('resDuplicados').textContent = duplicados;
+  document.getElementById('resInvalidos').textContent = errosArr.length;
+
+  if (errosArr.length > 0) {
+    document.getElementById('importErrors').classList.remove('hidden');
+    document.getElementById('importErrorList').innerHTML =
+      errosArr.slice(0, 30).map(e => `<li>• ${e}</li>`).join('') +
+      (errosArr.length > 30 ? `<li class="font-semibold mt-1">...e mais ${errosArr.length - 30} erros</li>` : '');
+  } else {
+    document.getElementById('importErrors').classList.add('hidden');
+  }
+
+  const result = document.getElementById('importResult');
+  result.classList.remove('hidden');
+  result.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+// Carrega leads do Supabase
+async function carregarLeads() {
+  if (!sb || !currentUser) return;
+  const { data, error } = await sb.from('leads')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(2000);
+  if (error) { console.error('carregarLeads', error); return; }
+  LEADS_REAIS = data || [];
+  atualizarTelas();
+}
+
+// Atualiza tabela de leads + Kanban com dados do banco
+function atualizarTelas() {
+  if (LEADS_REAIS.length === 0) {
+    // Mantém os mocks pra exibição inicial se ainda não importou nada
+    return;
+  }
+
+  // Substitui o array global usado pelas telas
+  LEADS.length = 0;
+  LEADS_REAIS.forEach(l => {
+    const statusMap = {
+      'novo':'Novo','contatado':'Contatado','respondeu':'Respondeu',
+      'reuniao':'Reunião','cliente':'Cliente','perdido':'Perdido'
+    };
+    const tagMap = {
+      'novo':'slate','contatado':'blue','respondeu':'purple',
+      'reuniao':'orange','cliente':'green','perdido':'red'
+    };
+    LEADS.push({
+      id: l.id,
+      empresa: l.nome_empresa,
+      tel: l.telefone_original || l.telefone,
+      cidade: `${l.cidade || '—'}/${l.estado || '—'}`,
+      seg: l.segmento || '—',
+      orig: (l.origem || 'manual').charAt(0).toUpperCase() + (l.origem || 'manual').slice(1),
+      status: statusMap[l.status_funil] || 'Novo',
+      tag: tagMap[l.status_funil] || 'slate',
+      last: l.ultimo_contato ? formatRelativeTime(l.ultimo_contato) : '—',
+    });
+  });
+
+  renderLeadsTable();
+  renderKanban();
+}
+
+function formatRelativeTime(iso) {
+  const d = new Date(iso);
+  const diff = Date.now() - d.getTime();
+  const min = Math.floor(diff / 60000);
+  if (min < 60) return `há ${min}min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `há ${h}h`;
+  const dias = Math.floor(h / 24);
+  return `há ${dias}d`;
+}
+
+// Origem buttons handler — captura seleção
+function setupOrigemButtons() {
+  document.querySelectorAll('.origem-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      importOrigem = b.textContent.trim().toLowerCase().replace(' ', '_');
+      if (importOrigem === 'base_antiga') importOrigem = 'base_antiga';
+    });
   });
 }
 
@@ -2117,7 +2413,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try { await checkExistingSession(); } catch(e) { console.warn('session check fail', e); }
   }
 
-  // Origem buttons toggle
+  // Origem buttons toggle + captura seleção
   document.querySelectorAll('.origem-btn').forEach(b => {
     b.addEventListener('click', () => {
       document.querySelectorAll('.origem-btn').forEach(x => {
@@ -2126,6 +2422,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
       b.classList.remove('border','border-slate-200');
       b.classList.add('border-2','border-trivium-blue','bg-blue-50','text-trivium-blue');
+      // Mapeia o texto do botão pro valor do enum
+      const txt = b.textContent.trim().toLowerCase();
+      const mapa = {
+        'manual':'manual', 'google':'google', 'instagram':'instagram',
+        'parceiro':'parceiro', 'base antiga':'base_antiga'
+      };
+      importOrigem = mapa[txt] || 'manual';
     });
   });
 
