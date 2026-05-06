@@ -1638,12 +1638,11 @@ function goTo(page) {
 }
 
 // ============== SUPABASE PRODUCTION CONFIG ==============
-// Para SaaS: preencha aqui sua URL e Publishable Key.
-// Encontre em: Supabase → Settings → API
-// Ao preencher e fazer deploy, qualquer visitante conecta automaticamente
-// ao SEU Supabase (e cada um tem dados isolados via RLS).
-const SUPABASE_PRODUCTION_URL = '';   // Ex: 'https://xxxxx.supabase.co'
-const SUPABASE_PRODUCTION_KEY = '';   // Ex: 'sb_publishable_...'
+// Modo SaaS ATIVO: qualquer visitante conecta automaticamente ao Supabase
+// e cada um tem dados isolados via RLS (Row Level Security).
+// Para mudar pra outro projeto Supabase, edite as 2 linhas abaixo.
+const SUPABASE_PRODUCTION_URL = 'https://uwaruwfhuoxkhcjvlubl.supabase.co';
+const SUPABASE_PRODUCTION_KEY = 'sb_publishable_DNSMFGw4zIWCHTODiTz9Vg__8XlYDSE';
 
 // ============== SUPABASE CONFIG ==============
 let sb = null;
