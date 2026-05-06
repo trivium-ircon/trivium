@@ -1290,10 +1290,23 @@
           <div>
             <label class="text-sm font-medium block mb-1">Tipo</label>
             <select id="editTplTipo" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
-              <option>Inicial</option>
-              <option>Follow-up 1</option>
-              <option>Follow-up 2</option>
-              <option>Follow-up 3</option>
+              <optgroup label="Abordagem inicial">
+                <option value="inicial_1">Inicial 1 - Saudação</option>
+                <option value="inicial_2">Inicial 2 - Pitch</option>
+              </optgroup>
+              <optgroup label="Follow-ups (sem resposta)">
+                <option value="followup_1">Follow-up 1 (D+3)</option>
+                <option value="followup_2">Follow-up 2 (D+7)</option>
+                <option value="followup_3">Follow-up 3 (última)</option>
+              </optgroup>
+              <optgroup label="Contornar objeções">
+                <option value="objecao_contador">Objeção: Já tem contador</option>
+                <option value="objecao_preco">Objeção: Acha caro</option>
+                <option value="objecao_pensar">Objeção: Vai pensar</option>
+                <option value="objecao_interna">Objeção: Resolve internamente</option>
+                <option value="objecao_urgencia">Objeção: Não precisa agora</option>
+                <option value="objecao_outras">Objeção: Outras</option>
+              </optgroup>
             </select>
           </div>
           <div>
@@ -1657,6 +1670,7 @@ async function enterApp(user) {
         carregarLeads(),
         carregarAppointments(),
         carregarMessagesRecentes(),
+        carregarTemplates(),
       ]);
     } catch(e) { console.warn('carregar dados', e); }
   }
@@ -3021,20 +3035,128 @@ function saveEditCampaign() {
   showToastInfo('Campanha salva com sucesso');
 }
 
-// ============== EDIT TEMPLATE ==============
+// ============== TEMPLATES (CRUD + carregamento) ==============
 let editingTplIdx = null;
-function openEditTemplate(idx) {
-  editingTplIdx = idx;
-  const t = TEMPLATES[idx];
-  document.getElementById('editTplTitle').textContent = 'Editar: ' + t.nome;
-  document.getElementById('editTplName').value = t.nome;
-  document.getElementById('editTplTipo').value = t.tipo;
-  document.getElementById('editTplContent').value = t.conteudo;
+
+// Inicializa TEMPLATES com os defaults (modo demo ou primeira carga)
+function inicializarTemplatesDefault() {
+  TEMPLATES.length = 0;
+  TEMPLATES_DEFAULT.forEach(t => {
+    TEMPLATES.push({
+      id: 'demo-' + Math.random().toString(36).substr(2, 9),
+      nome: t.nome,
+      tipoDb: t.tipo,
+      tipo: TIPO_LABELS[t.tipo] || 'Inicial',
+      ordem: t.ordem,
+      conteudo: t.conteudo,
+      uso: 0,
+    });
+  });
+}
+
+// Carrega templates do Supabase. Se vazio, cria os defaults no banco.
+async function carregarTemplates() {
+  if (!sb || !currentUser) {
+    if (TEMPLATES.length === 0) inicializarTemplatesDefault();
+    renderTemplates();
+    return;
+  }
+
+  const { data, error } = await sb.from('message_templates')
+    .select('*').eq('user_id', currentUser.id)
+    .order('ordem_followup', { ascending: true });
+
+  if (error) {
+    console.warn('carregarTemplates', error);
+    if (TEMPLATES.length === 0) inicializarTemplatesDefault();
+    renderTemplates();
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    // Primeiro acesso: cria os defaults no banco
+    const inserts = TEMPLATES_DEFAULT.map(t => ({
+      user_id: currentUser.id,
+      nome: t.nome,
+      tipo: t.tipo,
+      conteudo: t.conteudo,
+      ordem_followup: t.ordem,
+    }));
+    const { data: novos, error: errIns } = await sb.from('message_templates').insert(inserts).select();
+    if (errIns) {
+      console.warn('inserir defaults', errIns);
+      inicializarTemplatesDefault();
+    } else if (novos) {
+      TEMPLATES.length = 0;
+      novos.forEach(t => TEMPLATES.push({
+        id: t.id, nome: t.nome, tipoDb: t.tipo,
+        tipo: TIPO_LABELS[t.tipo] || 'Inicial',
+        ordem: t.ordem_followup, conteudo: t.conteudo, uso: 0,
+      }));
+    }
+  } else {
+    TEMPLATES.length = 0;
+    data.forEach(t => TEMPLATES.push({
+      id: t.id, nome: t.nome, tipoDb: t.tipo,
+      tipo: TIPO_LABELS[t.tipo] || 'Inicial',
+      ordem: t.ordem_followup, conteudo: t.conteudo, uso: 0,
+    }));
+  }
+
+  renderTemplates();
+}
+
+function newTemplate() {
+  editingTplIdx = -1; // sentinel pra "novo"
+  document.getElementById('editTplTitle').textContent = 'Novo template';
+  document.getElementById('editTplName').value = '';
+  document.getElementById('editTplTipo').value = 'inicial_1';
+  document.getElementById('editTplContent').value = 'Olá {{saudacao}}!\n\n[Sua mensagem aqui]\n\nQualquer coisa, é só chamar!';
+  // Esconde botão de excluir (não tem o que excluir num novo)
+  const btnDel = document.getElementById('btnDeleteTpl');
+  if (btnDel) btnDel.style.display = 'none';
   renderTplPreview();
   document.getElementById('editTemplateModal').classList.remove('hidden');
   lucide.createIcons();
 }
-function closeEditTemplate() { document.getElementById('editTemplateModal').classList.add('hidden'); }
+
+function openEditTemplate(idx) {
+  editingTplIdx = idx;
+  const t = TEMPLATES[idx];
+  if (!t) return;
+  document.getElementById('editTplTitle').textContent = 'Editar: ' + t.nome;
+  document.getElementById('editTplName').value = t.nome;
+  document.getElementById('editTplTipo').value = t.tipoDb || 'inicial_1';
+  document.getElementById('editTplContent').value = t.conteudo;
+  // Mostra botão de excluir
+  const btnDel = document.getElementById('btnDeleteTpl');
+  if (btnDel) btnDel.style.display = '';
+  renderTplPreview();
+  document.getElementById('editTemplateModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function closeEditTemplate() {
+  document.getElementById('editTemplateModal').classList.add('hidden');
+  editingTplIdx = null;
+}
+
+async function deleteTemplate() {
+  if (editingTplIdx === null || editingTplIdx === -1) return;
+  const tpl = TEMPLATES[editingTplIdx];
+  if (!tpl) return;
+  if (!confirm(`Excluir o template "${tpl.nome}"? Esta ação não pode ser desfeita.`)) return;
+
+  if (sb && currentUser && tpl.id && !String(tpl.id).startsWith('demo-')) {
+    const { error } = await sb.from('message_templates').delete().eq('id', tpl.id);
+    if (error) { alert('Erro ao excluir: ' + error.message); return; }
+  }
+
+  TEMPLATES.splice(editingTplIdx, 1);
+  closeEditTemplate();
+  renderTemplates();
+  showToastInfo('Template excluído');
+}
 function renderTplPreview() {
   const txt = document.getElementById('editTplContent').value || '';
   const replaced = txt
@@ -3054,14 +3176,59 @@ function insertVar(v) {
   ta.selectionStart = ta.selectionEnd = start + v.length;
   renderTplPreview();
 }
-function saveEditTemplate() {
+async function saveEditTemplate() {
   if (editingTplIdx === null) return;
-  TEMPLATES[editingTplIdx].nome = document.getElementById('editTplName').value;
-  TEMPLATES[editingTplIdx].tipo = document.getElementById('editTplTipo').value;
-  TEMPLATES[editingTplIdx].conteudo = document.getElementById('editTplContent').value;
+
+  const nome = document.getElementById('editTplName').value.trim();
+  const tipoDb = document.getElementById('editTplTipo').value;
+  const conteudo = document.getElementById('editTplContent').value.trim();
+
+  if (!nome) { alert('Dê um nome para o template'); return; }
+  if (!conteudo) { alert('Digite o conteúdo da mensagem'); return; }
+
+  const ordem = TIPO_ORDEM[tipoDb] ?? 0;
+  const tipoLabel = TIPO_LABELS[tipoDb] || 'Inicial';
+
+  if (editingTplIdx === -1) {
+    // CRIAR NOVO
+    if (sb && currentUser) {
+      const { data, error } = await sb.from('message_templates').insert({
+        user_id: currentUser.id,
+        nome, tipo: tipoDb, conteudo, ordem_followup: ordem,
+      }).select().single();
+      if (error) { alert('Erro ao criar: ' + error.message); return; }
+      TEMPLATES.push({
+        id: data.id, nome, tipoDb, tipo: tipoLabel, ordem, conteudo, uso: 0,
+      });
+    } else {
+      TEMPLATES.push({
+        id: 'demo-' + Math.random().toString(36).substr(2, 9),
+        nome, tipoDb, tipo: tipoLabel, ordem, conteudo, uso: 0,
+      });
+    }
+    showToastInfo('✓ Template criado!');
+  } else {
+    // EDITAR EXISTENTE
+    const tpl = TEMPLATES[editingTplIdx];
+    tpl.nome = nome;
+    tpl.tipoDb = tipoDb;
+    tpl.tipo = tipoLabel;
+    tpl.ordem = ordem;
+    tpl.conteudo = conteudo;
+
+    if (sb && currentUser && tpl.id && !String(tpl.id).startsWith('demo-')) {
+      const { error } = await sb.from('message_templates').update({
+        nome, tipo: tipoDb, conteudo, ordem_followup: ordem,
+      }).eq('id', tpl.id);
+      if (error) { alert('Erro ao salvar: ' + error.message); return; }
+    }
+    showToastInfo('✓ Template salvo!');
+  }
+
+  // Re-ordena por ordem
+  TEMPLATES.sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
   closeEditTemplate();
   renderTemplates();
-  showToastInfo('Template salvo com sucesso');
 }
 
 // ============== TOAST ==============
@@ -3076,6 +3243,7 @@ function showToastInfo(msg) {
 // ============== INIT ==============
 document.addEventListener('DOMContentLoaded', async () => {
   lucide.createIcons();
+  inicializarTemplatesDefault(); // Templates default sempre visíveis no carregamento
   renderLeadsTable();
   renderKanban();
   renderInbox();
