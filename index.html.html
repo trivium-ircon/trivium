@@ -953,8 +953,12 @@
           </div>
           <div>
             <label class="text-sm font-medium">Segmento</label>
-            <input id="ncSegmento" list="segmentosCampanha" oninput="atualizarEstimativaCampanha()" placeholder="Todos" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
-            <datalist id="segmentosCampanha"></datalist>
+            <select id="ncSegmento" onchange="atualizarEstimativaCampanha()" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              <option value="">Todos os segmentos</option>
+            </select>
+            <p id="ncSegmentoHint" class="text-xs text-slate-500 mt-1 hidden">
+              Sem segmentos ainda. <button type="button" onclick="closeNewCampaign(); openNovoLead();" class="text-trivium-blue underline">Cadastre um lead</button> ou importe Excel com a coluna "segmento" preenchida.
+            </p>
           </div>
         </div>
         <div id="ncEstimativa" class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
@@ -2847,10 +2851,18 @@ function openNewCampaign() {
     sel.innerHTML = iniciais.map((t, i) => `<option value="${TEMPLATES.indexOf(t)}">${t.nome} (${t.tipo})</option>`).join('');
   }
 
-  // Popular datalist de segmentos com base nos leads reais
-  const dl = document.getElementById('segmentosCampanha');
+  // Popular SELECT de segmentos com base nos leads reais
+  const segSel = document.getElementById('ncSegmento');
+  const segHint = document.getElementById('ncSegmentoHint');
   const segs = getSegmentosUnicos();
-  dl.innerHTML = segs.map(s => `<option value="${s}">`).join('');
+  let segHtml = '<option value="">Todos os segmentos</option>';
+  if (segs.length > 0) {
+    segHtml += segs.map(s => `<option value="${s}">${s}</option>`).join('');
+    segHint.classList.add('hidden');
+  } else {
+    segHint.classList.remove('hidden');
+  }
+  segSel.innerHTML = segHtml;
 
   // Limpar campos
   document.getElementById('ncNome').value = '';
