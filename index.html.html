@@ -233,7 +233,7 @@
         <span class="ml-auto text-xs bg-trivium-blue/20 text-trivium-blue-light px-1.5 py-0.5 rounded">2.4k</span>
       </button>
       <button onclick="goTo('kanban')" data-nav="kanban" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
-        <i data-lucide="layout-grid" class="w-4 h-4"></i><span>Funil (Kanban)</span>
+        <i data-lucide="filter" class="w-4 h-4"></i><span>Funil</span>
       </button>
       <button onclick="goTo('inbox')" data-nav="inbox" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
         <i data-lucide="inbox" class="w-4 h-4"></i><span>Caixa de entrada</span>
@@ -283,10 +283,18 @@
         <input placeholder="Buscar lead, campanha, mensagem..." class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:bg-white focus:border-trivium-blue focus:outline-none focus:ring-2 focus:ring-trivium-blue/10" />
       </div>
       <div class="flex items-center gap-2">
-        <button class="relative p-2 hover:bg-slate-100 rounded-lg">
+        <button onclick="abrirNotificacoes()" id="btnNotificacoes" class="relative p-2 hover:bg-slate-100 rounded-lg" title="Pendências">
           <i data-lucide="bell" class="w-5 h-5 text-slate-600"></i>
-          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+          <span id="notifBadge" class="hidden absolute top-1 right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full text-white text-[10px] font-bold flex items-center justify-center px-1">0</span>
         </button>
+        <!-- Painel de notificações -->
+        <div id="notifPanel" class="hidden absolute top-14 right-6 w-96 bg-white border border-slate-200 rounded-xl shadow-xl z-40 max-h-[80vh] overflow-y-auto scrollbar-thin">
+          <div class="p-4 border-b border-slate-100">
+            <h3 class="font-semibold text-slate-900">Pendências</h3>
+            <p class="text-xs text-slate-500" id="notifSubtitle">—</p>
+          </div>
+          <div id="notifList" class="divide-y divide-slate-100"></div>
+        </div>
         <button class="px-3 py-1.5 bg-trivium-blue/10 text-trivium-blue rounded-lg text-sm font-medium hover:bg-trivium-blue/20">
           <i data-lucide="zap" class="w-3.5 h-3.5 inline mr-1"></i>Upgrade
         </button>
@@ -300,7 +308,7 @@
       <section data-page="dashboard" class="page p-8 fade-in">
         <div class="flex items-end justify-between mb-8">
           <div>
-            <h1 class="text-2xl font-bold text-slate-900">Olá, Igor 👋</h1>
+            <h1 class="text-2xl font-bold text-slate-900" id="dashGreeting">Olá! 👋</h1>
             <p class="text-slate-500 text-sm mt-1">Aqui está o resumo do seu negócio hoje</p>
           </div>
           <div class="flex gap-2">
@@ -396,13 +404,13 @@
         <div class="flex items-end justify-between mb-6">
           <div>
             <h1 class="text-2xl font-bold text-slate-900">Leads</h1>
-            <p class="text-slate-500 text-sm mt-1">2.456 leads · 1.984 aptos para WhatsApp</p>
+            <p class="text-slate-500 text-sm mt-1" id="leadsSubtitle">0 leads</p>
           </div>
           <div class="flex gap-2">
             <button onclick="goTo('importar')" class="bg-white border border-slate-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 flex items-center gap-2">
               <i data-lucide="upload" class="w-4 h-4"></i>Importar
             </button>
-            <button class="bg-trivium-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-trivium-blue-dark flex items-center gap-2">
+            <button onclick="openNovoLead()" class="bg-trivium-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-trivium-blue-dark flex items-center gap-2">
               <i data-lucide="plus" class="w-4 h-4"></i>Novo lead
             </button>
           </div>
@@ -465,6 +473,36 @@
             <p class="text-slate-500 text-sm mt-1">Arraste os cards entre as colunas para mover o lead</p>
           </div>
           <button onclick="goTo('leads')" class="text-sm text-slate-600 hover:text-slate-900">Ver como tabela →</button>
+        </div>
+
+        <!-- Painel-resumo do funil -->
+        <div class="bg-white border border-slate-200 rounded-xl p-5 mb-5">
+          <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
+            <div class="text-center md:border-r md:border-slate-100">
+              <div class="text-2xl font-bold text-slate-900" id="funResumoTotal">0</div>
+              <div class="text-xs text-slate-500 mt-0.5">Total leads</div>
+            </div>
+            <div class="text-center md:border-r md:border-slate-100">
+              <div class="text-2xl font-bold text-trivium-blue" id="funResumoAndamento">0</div>
+              <div class="text-xs text-slate-500 mt-0.5">Em andamento</div>
+            </div>
+            <div class="text-center md:border-r md:border-slate-100">
+              <div class="text-2xl font-bold text-orange-600" id="funResumoReunioes">0</div>
+              <div class="text-xs text-slate-500 mt-0.5">Reuniões</div>
+            </div>
+            <div class="text-center md:border-r md:border-slate-100">
+              <div class="text-2xl font-bold text-green-600" id="funResumoClientes">0</div>
+              <div class="text-xs text-slate-500 mt-0.5">Clientes fechados</div>
+            </div>
+            <button onclick="openPerdidosModal()" class="text-center hover:bg-red-50 rounded-lg transition group md:border-r md:border-slate-100">
+              <div class="text-2xl font-bold text-red-600 group-hover:text-red-700" id="funResumoPerdidos">0</div>
+              <div class="text-xs text-slate-500 mt-0.5">Perdidos · ver motivos</div>
+            </button>
+            <div class="text-center">
+              <div class="text-2xl font-bold text-purple-600" id="funResumoTaxa">0%</div>
+              <div class="text-xs text-slate-500 mt-0.5">Taxa conversão</div>
+            </div>
+          </div>
         </div>
 
         <div id="kanbanBoard" class="grid grid-cols-6 gap-4"></div>
@@ -660,7 +698,7 @@
             <h1 class="text-2xl font-bold text-slate-900">Campanhas</h1>
             <p class="text-slate-500 text-sm mt-1">Crie disparos em massa com horário e segmentação</p>
           </div>
-          <button onclick="document.getElementById('newCampaignModal').classList.remove('hidden')" class="bg-trivium-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-trivium-blue-dark flex items-center gap-2">
+          <button onclick="openNewCampaign()" class="bg-trivium-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-trivium-blue-dark flex items-center gap-2">
             <i data-lucide="plus" class="w-4 h-4"></i>Nova campanha
           </button>
         </div>
@@ -896,22 +934,36 @@
     <div class="bg-white rounded-xl max-w-lg w-full p-6">
       <div class="flex items-center justify-between mb-5">
         <h3 class="text-lg font-bold">Nova campanha</h3>
-        <button onclick="document.getElementById('newCampaignModal').classList.add('hidden')" class="p-1 hover:bg-slate-100 rounded"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <button onclick="closeNewCampaign()" class="p-1 hover:bg-slate-100 rounded"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
       <div class="space-y-4">
-        <div><label class="text-sm font-medium">Nome da campanha</label><input placeholder="Ex: Médicos São Paulo Maio" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" /></div>
-        <div><label class="text-sm font-medium">Template</label><select class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm"><option>Abordagem inicial - Médicos</option><option>Abordagem inicial - Advogados</option></select></div>
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="text-sm font-medium">Cidade</label><input placeholder="Todas" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" /></div>
-          <div><label class="text-sm font-medium">Segmento</label><select class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm"><option>Todos</option><option>Médicos</option><option>Advogados</option><option>Clínicas</option></select></div>
+        <div>
+          <label class="text-sm font-medium">Nome da campanha</label>
+          <input id="ncNome" placeholder="Ex: Médicos São Paulo Maio" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
         </div>
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
-          <i data-lucide="info" class="w-4 h-4 inline text-trivium-blue"></i> 320 leads aptos serão incluídos · estimativa de envio: ~6 horas
+        <div>
+          <label class="text-sm font-medium">Template inicial</label>
+          <select id="ncTemplate" onchange="atualizarEstimativaCampanha()" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm"></select>
+          <p class="text-xs text-slate-500 mt-1">Apenas templates iniciais aparecem aqui</p>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-sm font-medium">Cidade</label>
+            <input id="ncCidade" oninput="atualizarEstimativaCampanha()" placeholder="Todas" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label class="text-sm font-medium">Segmento</label>
+            <input id="ncSegmento" list="segmentosCampanha" oninput="atualizarEstimativaCampanha()" placeholder="Todos" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+            <datalist id="segmentosCampanha"></datalist>
+          </div>
+        </div>
+        <div id="ncEstimativa" class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+          <i data-lucide="info" class="w-4 h-4 inline text-trivium-blue"></i> <span id="ncEstimativaTexto">0 leads aptos serão incluídos</span>
         </div>
       </div>
       <div class="flex gap-2 mt-6">
-        <button onclick="document.getElementById('newCampaignModal').classList.add('hidden')" class="flex-1 border border-slate-200 px-4 py-2 rounded-lg text-sm">Cancelar</button>
-        <button class="flex-1 bg-trivium-blue text-white px-4 py-2 rounded-lg text-sm font-medium">Criar e iniciar</button>
+        <button onclick="closeNewCampaign()" class="flex-1 border border-slate-200 px-4 py-2 rounded-lg text-sm">Cancelar</button>
+        <button onclick="criarCampanha()" class="flex-1 bg-trivium-blue text-white px-4 py-2 rounded-lg text-sm font-medium">Criar e iniciar</button>
       </div>
     </div>
   </div>
@@ -999,6 +1051,104 @@
           <button onclick="closeEditCampaign()" class="border border-slate-200 px-4 py-2 rounded-lg text-sm">Cancelar</button>
           <button onclick="saveEditCampaign()" class="bg-trivium-blue text-white px-5 py-2 rounded-lg text-sm font-medium">Salvar</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Perdidos Modal -->
+  <div id="perdidosModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-thin">
+      <div class="sticky top-0 bg-white border-b border-slate-100 p-5 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center"><i data-lucide="x-circle" class="w-5 h-5 text-red-600"></i></div>
+          <div>
+            <h3 class="text-lg font-bold">Análise de leads perdidos</h3>
+            <p class="text-xs text-slate-500" id="perdidosSubtitle">Principais motivos e objeções</p>
+          </div>
+        </div>
+        <button onclick="document.getElementById('perdidosModal').classList.add('hidden')" class="p-1 hover:bg-slate-100 rounded"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-6 space-y-6">
+        <!-- Tabs internas: motivos vs objeções -->
+        <div>
+          <h4 class="font-semibold text-slate-900 mb-3 flex items-center gap-2"><i data-lucide="bar-chart-3" class="w-4 h-4 text-red-600"></i>Motivos de perda</h4>
+          <div id="perdidosMotivosList" class="space-y-2"></div>
+        </div>
+        <div>
+          <h4 class="font-semibold text-slate-900 mb-3 flex items-center gap-2"><i data-lucide="shield-x" class="w-4 h-4 text-orange-600"></i>Objeções recebidas (no funil todo)</h4>
+          <div id="perdidosObjecoesList" class="space-y-2"></div>
+        </div>
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm flex gap-2">
+          <i data-lucide="lightbulb" class="w-4 h-4 text-trivium-blue flex-shrink-0 mt-0.5"></i>
+          <div>
+            <strong>Insight:</strong> a objeção mais frequente revela o que o mercado mais resiste. Use isso pra ajustar seu pitch inicial e antecipar a resposta antes mesmo de aparecer.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Novo Lead Modal -->
+  <div id="novoLeadModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-thin">
+      <div class="sticky top-0 bg-white border-b border-slate-100 p-5 flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-bold">Novo lead</h3>
+          <p class="text-xs text-slate-500">Adicione um lead manualmente — útil pra indicações ou contatos avulsos</p>
+        </div>
+        <button onclick="closeNovoLead()" class="p-1 hover:bg-slate-100 rounded"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-sm font-medium block mb-1">Nome da empresa *</label>
+            <input id="nlEmpresa" required class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Ex: Clínica Vida Plena" />
+          </div>
+          <div>
+            <label class="text-sm font-medium block mb-1">Nome do responsável</label>
+            <input id="nlResponsavel" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Ex: Dr. João Silva" />
+          </div>
+          <div>
+            <label class="text-sm font-medium block mb-1">Telefone (com DDD) *</label>
+            <input id="nlTelefone" required class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="(11) 99988-7766" />
+          </div>
+          <div>
+            <label class="text-sm font-medium block mb-1">E-mail</label>
+            <input id="nlEmail" type="email" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="contato@empresa.com" />
+          </div>
+          <div>
+            <label class="text-sm font-medium block mb-1">Cidade</label>
+            <input id="nlCidade" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="São Paulo" />
+          </div>
+          <div>
+            <label class="text-sm font-medium block mb-1">Estado (UF)</label>
+            <input id="nlEstado" maxlength="2" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm uppercase" placeholder="SP" />
+          </div>
+          <div>
+            <label class="text-sm font-medium block mb-1">Segmento</label>
+            <input id="nlSegmento" list="segmentosSugeridos" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Médico, Advogado, Loja..." />
+            <datalist id="segmentosSugeridos"></datalist>
+          </div>
+          <div>
+            <label class="text-sm font-medium block mb-1">Origem</label>
+            <select id="nlOrigem" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              <option value="manual">Manual</option>
+              <option value="google">Google</option>
+              <option value="instagram">Instagram</option>
+              <option value="parceiro">Parceiro</option>
+              <option value="base_antiga">Base antiga</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="text-sm font-medium block mb-1">Observações</label>
+          <textarea id="nlObs" rows="2" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="Indicado por... / detalhes importantes..."></textarea>
+        </div>
+        <p id="nlErr" class="text-sm text-red-600 hidden"></p>
+      </div>
+      <div class="sticky bottom-0 bg-white border-t border-slate-100 p-4 flex gap-2 justify-end">
+        <button onclick="closeNovoLead()" class="border border-slate-200 px-4 py-2 rounded-lg text-sm">Cancelar</button>
+        <button onclick="salvarNovoLead()" class="bg-trivium-blue text-white px-5 py-2 rounded-lg text-sm font-medium">Salvar lead</button>
       </div>
     </div>
   </div>
@@ -1483,22 +1633,40 @@ function goTo(page) {
   document.querySelector('main').scrollTop = 0;
 }
 
+// ============== SUPABASE PRODUCTION CONFIG ==============
+// Para SaaS: preencha aqui sua URL e Publishable Key.
+// Encontre em: Supabase → Settings → API
+// Ao preencher e fazer deploy, qualquer visitante conecta automaticamente
+// ao SEU Supabase (e cada um tem dados isolados via RLS).
+const SUPABASE_PRODUCTION_URL = '';   // Ex: 'https://xxxxx.supabase.co'
+const SUPABASE_PRODUCTION_KEY = '';   // Ex: 'sb_publishable_...'
+
 // ============== SUPABASE CONFIG ==============
 let sb = null;
 let currentUser = null;
 
 function loadSupabaseConfig() {
-  const url = localStorage.getItem('triv_sb_url');
-  const key = localStorage.getItem('triv_sb_key');
+  // Modo PRODUÇÃO (chaves hardcoded) tem prioridade sobre localStorage
+  let url = SUPABASE_PRODUCTION_URL;
+  let key = SUPABASE_PRODUCTION_KEY;
+  const isProduction = !!(url && key);
+  if (!isProduction) {
+    url = localStorage.getItem('triv_sb_url');
+    key = localStorage.getItem('triv_sb_key');
+  }
+
+  const banner = document.getElementById('demoBanner');
+  const cfgBtn = document.querySelector('button[onclick="openConfig()"]');
+  const status = document.getElementById('cfgStatus');
+
   if (url && key && window.supabase) {
     sb = window.supabase.createClient(url, key);
-    document.getElementById('cfgStatus').textContent = 'Conectado';
-    document.getElementById('cfgStatus').className = 'text-green-400';
-    const banner = document.getElementById('demoBanner');
+    if (status) { status.textContent = 'Conectado'; status.className = 'text-green-400'; }
     if (banner) banner.style.display = 'none';
+    // Em produção, esconde botão de config também (visitantes não devem mexer)
+    if (isProduction && cfgBtn) cfgBtn.style.display = 'none';
     return true;
   }
-  const banner = document.getElementById('demoBanner');
   if (banner) banner.style.display = '';
   return false;
 }
@@ -1649,6 +1817,7 @@ function traduzirErro(msg) {
 async function enterApp(user) {
   currentUser = user;
   const nome = user?.user_metadata?.nome || user?.email?.split('@')[0] || 'Usuário';
+  const primeiroNome = nome.split(' ')[0];
   const email = user?.email || '';
   const sidebar = document.querySelector('aside .flex-1.min-w-0');
   if (sidebar) {
@@ -1657,6 +1826,8 @@ async function enterApp(user) {
   }
   const avatar = document.querySelector('aside .gradient-blue');
   if (avatar) avatar.textContent = nome.split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase();
+  const greet = document.getElementById('dashGreeting');
+  if (greet) greet.textContent = `Olá, ${primeiroNome} 👋`;
 
   document.getElementById('screen-login').style.display = 'none';
   document.getElementById('screen-app').classList.remove('hidden');
@@ -1746,6 +1917,7 @@ function renderLeadsTable() {
 }
 
 function renderKanban() {
+  renderFunilResumo();
   const board = document.getElementById('kanbanBoard');
   const counts = {};
   LEADS.forEach(l => counts[l.status] = (counts[l.status]||0)+1);
@@ -1776,6 +1948,104 @@ function renderKanban() {
       </div>
     </div>
   `).join('');
+}
+
+// ============== RESUMO DO FUNIL + PERDIDOS ==============
+function renderFunilResumo() {
+  const total = LEADS.length;
+  const andamento = LEADS.filter(l => l.status === 'Novo' || l.status === 'Contatado' || l.status === 'Respondeu').length;
+  const reunioes = LEADS.filter(l => l.status === 'Reunião').length;
+  const clientes = LEADS.filter(l => l.status === 'Cliente').length;
+  const perdidos = LEADS.filter(l => l.status === 'Perdido').length;
+  const taxa = total > 0 ? Math.round((clientes / total) * 100) : 0;
+  setText('funResumoTotal', total);
+  setText('funResumoAndamento', andamento);
+  setText('funResumoReunioes', reunioes);
+  setText('funResumoClientes', clientes);
+  setText('funResumoPerdidos', perdidos);
+  setText('funResumoTaxa', taxa + '%');
+}
+
+const MOTIVO_LABELS = {
+  'objecao_contador':{label:'Já tinha contador', color:'orange', icon:'shield'},
+  'objecao_preco':{label:'Achou caro', color:'orange', icon:'dollar-sign'},
+  'objecao_pensar':{label:'Disse que ia pensar', color:'orange', icon:'clock'},
+  'objecao_interna':{label:'Resolve internamente', color:'orange', icon:'building'},
+  'objecao_urgencia':{label:'Não precisa agora', color:'orange', icon:'pause'},
+  'objecao_outras':{label:'Outras objeções', color:'orange', icon:'help-circle'},
+  'nao_interessado':{label:'Sem interesse direto', color:'red', icon:'x'},
+  'opt_out':{label:'Pediu pra parar', color:'slate', icon:'volume-x'},
+  'sem_classificacao':{label:'Sem classificação', color:'slate', icon:'circle'},
+};
+
+async function openPerdidosModal() {
+  const perdidos = LEADS.filter(l => l.status === 'Perdido');
+  document.getElementById('perdidosSubtitle').textContent =
+    perdidos.length === 0 ? 'Nenhum lead perdido ainda' : `${perdidos.length} lead${perdidos.length>1?'s':''} perdido${perdidos.length>1?'s':''}`;
+
+  // === Motivos (das ÚLTIMAS classificações dos leads perdidos) ===
+  const motivos = {};
+  if (sb && currentUser && perdidos.length > 0) {
+    const ids = perdidos.map(l => l.id).filter(id => !String(id).startsWith('demo-'));
+    if (ids.length > 0) {
+      const { data } = await sb.from('messages')
+        .select('lead_id, classificacao_ia')
+        .eq('user_id', currentUser.id)
+        .in('lead_id', ids)
+        .not('classificacao_ia', 'is', null)
+        .order('enviada_em', { ascending: false });
+      const lastClass = {};
+      (data || []).forEach(m => { if (!lastClass[m.lead_id]) lastClass[m.lead_id] = m.classificacao_ia; });
+      perdidos.forEach(l => {
+        const c = lastClass[l.id] || 'sem_classificacao';
+        motivos[c] = (motivos[c] || 0) + 1;
+      });
+    } else {
+      motivos['sem_classificacao'] = perdidos.length;
+    }
+  } else {
+    motivos['sem_classificacao'] = perdidos.length;
+  }
+  renderBreakdown('perdidosMotivosList', motivos, perdidos.length);
+
+  // === Objeções (TODAS — não só perdidos) ===
+  const objecoes = {};
+  if (sb && currentUser) {
+    const { data } = await sb.from('messages')
+      .select('classificacao_ia')
+      .eq('user_id', currentUser.id)
+      .like('classificacao_ia', 'objecao_%');
+    (data || []).forEach(m => {
+      objecoes[m.classificacao_ia] = (objecoes[m.classificacao_ia] || 0) + 1;
+    });
+  }
+  const totalObj = Object.values(objecoes).reduce((a,b) => a+b, 0);
+  renderBreakdown('perdidosObjecoesList', objecoes, totalObj || 1);
+
+  document.getElementById('perdidosModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function renderBreakdown(targetId, mapa, total) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  if (Object.keys(mapa).length === 0) {
+    el.innerHTML = `<div class="text-center py-6 text-sm text-slate-400">Nenhum dado ainda</div>`;
+    return;
+  }
+  const ordered = Object.entries(mapa).sort((a,b) => b[1]-a[1]);
+  const colorBars = { orange:'bg-orange-500', red:'bg-red-500', slate:'bg-slate-400' };
+  el.innerHTML = ordered.map(([k, qtd]) => {
+    const m = MOTIVO_LABELS[k] || { label:k, color:'slate' };
+    const pct = Math.round((qtd / total) * 100);
+    return `<div>
+      <div class="flex justify-between text-sm mb-1">
+        <span class="font-medium">${m.label}</span>
+        <span class="text-slate-500">${qtd} (${pct}%)</span>
+      </div>
+      <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full ${colorBars[m.color]} rounded-full" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
 }
 
 let dragged = null;
@@ -1886,15 +2156,33 @@ function renderTemplates() {
   lucide.createIcons();
 }
 
-// ============== CHART ==============
-function renderChart() {
+// ============== CHART (dados reais) ==============
+let dashChartInstance = null;
+async function carregarChartData() {
+  if (!sb || !currentUser) return { enviadas: Array(30).fill(0), respostas: Array(30).fill(0) };
+  const desde = new Date();
+  desde.setDate(desde.getDate() - 30);
+  const { data } = await sb.from('messages')
+    .select('direcao, enviada_em')
+    .gte('enviada_em', desde.toISOString());
+  const enviadas = Array(30).fill(0), respostas = Array(30).fill(0);
+  (data || []).forEach(m => {
+    const dt = new Date(m.enviada_em);
+    const idx = 29 - Math.floor((Date.now() - dt.getTime()) / 86400000);
+    if (idx < 0 || idx > 29) return;
+    if (m.direcao === 'enviada') enviadas[idx]++;
+    else if (m.direcao === 'recebida') respostas[idx]++;
+  });
+  return { enviadas, respostas };
+}
+
+async function renderDashChart() {
   const ctx = document.getElementById('dashChart');
-  if (!ctx || ctx._rendered) return;
-  ctx._rendered = true;
+  if (!ctx) return;
+  const { enviadas, respostas } = await carregarChartData();
   const labels = Array.from({length:30}, (_,i) => `${i+1}`);
-  const enviadas = labels.map(() => Math.floor(Math.random()*40)+30);
-  const respostas = enviadas.map(v => Math.floor(v*(0.18+Math.random()*0.12)));
-  new Chart(ctx, {
+  if (dashChartInstance) dashChartInstance.destroy();
+  dashChartInstance = new Chart(ctx, {
     type:'line',
     data:{
       labels,
@@ -1908,12 +2196,15 @@ function renderChart() {
       plugins:{ legend:{display:false}, tooltip:{ mode:'index', intersect:false } },
       scales:{
         x:{ grid:{display:false}, ticks:{color:'#94A3B8',font:{size:10}} },
-        y:{ grid:{color:'#F1F5F9'}, ticks:{color:'#94A3B8',font:{size:10}}, beginAtZero:true }
+        y:{ grid:{color:'#F1F5F9'}, ticks:{color:'#94A3B8',font:{size:10}}, beginAtZero:true, suggestedMax: 5 }
       },
       interaction:{ intersect:false, mode:'index' }
     }
   });
 }
+
+// Mantém função antiga como alias (chamada em outros lugares)
+function renderChart() { renderDashChart(); }
 
 // ============== LEADS REAIS (Supabase) ==============
 let LEADS_REAIS = [];
@@ -2459,8 +2750,202 @@ async function salvarRespondeu() {
       openWhatsAppSend(lead.id, tipoTpl);
     }, 600);
   } else {
-    showToastInfo('✓ Resposta registrada');
+    // Toast com info da movimentação no funil
+    const mensagensColuna = {
+      'Respondeu': '✓ Lead movido para "Respondeu" no Funil — fica nas Ligações pendentes',
+      'Perdido': '✓ Lead movido para "Perdido" no Funil',
+    };
+    showToastInfo(mensagensColuna[lead.status] || '✓ Resposta registrada');
   }
+}
+
+// ============== NOVO LEAD (manual) ==============
+function getSegmentosUnicos() {
+  const set = new Set();
+  LEADS.forEach(l => { if (l.seg && l.seg !== '—') set.add(l.seg); });
+  return Array.from(set).sort();
+}
+
+function popularSegmentosDatalist() {
+  const dl = document.getElementById('segmentosSugeridos');
+  if (!dl) return;
+  const segs = getSegmentosUnicos();
+  const sugestoes = ['Médico','Advogado','Clínica','Engenheiro','Arquiteto','Lojista','Comércio','Restaurante','Estética','Pet Shop','Academia','Padaria','Imobiliária','Transportadora'];
+  const todos = Array.from(new Set([...segs, ...sugestoes])).sort();
+  dl.innerHTML = todos.map(s => `<option value="${s}">`).join('');
+}
+
+function openNovoLead() {
+  ['nlEmpresa','nlResponsavel','nlTelefone','nlEmail','nlCidade','nlEstado','nlSegmento','nlObs']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('nlOrigem').value = 'manual';
+  document.getElementById('nlErr').classList.add('hidden');
+  popularSegmentosDatalist();
+  document.getElementById('novoLeadModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function closeNovoLead() {
+  document.getElementById('novoLeadModal').classList.add('hidden');
+}
+
+async function salvarNovoLead() {
+  const errEl = document.getElementById('nlErr');
+  errEl.classList.add('hidden');
+
+  const nome_empresa = document.getElementById('nlEmpresa').value.trim();
+  const telefone = document.getElementById('nlTelefone').value.trim();
+
+  if (!nome_empresa) { errEl.textContent = 'Nome da empresa é obrigatório'; errEl.classList.remove('hidden'); return; }
+  if (!telefone) { errEl.textContent = 'Telefone é obrigatório'; errEl.classList.remove('hidden'); return; }
+
+  const phone = normalizePhoneBR(telefone);
+  if (!phone.valid) { errEl.textContent = 'Telefone inválido. Use formato BR com DDD.'; errEl.classList.remove('hidden'); return; }
+
+  const lead = {
+    nome_empresa,
+    nome_responsavel: document.getElementById('nlResponsavel').value.trim() || null,
+    telefone: phone.e164,
+    telefone_original: telefone,
+    email: document.getElementById('nlEmail').value.trim() || null,
+    cidade: document.getElementById('nlCidade').value.trim() || null,
+    estado: document.getElementById('nlEstado').value.trim().toUpperCase().slice(0,2) || null,
+    segmento: document.getElementById('nlSegmento').value.trim() || null,
+    observacoes: document.getElementById('nlObs').value.trim() || null,
+    origem: document.getElementById('nlOrigem').value,
+    whatsapp_apto: isWhatsAppApto(phone.e164),
+  };
+
+  if (sb && currentUser) {
+    // Verifica duplicado
+    const { data: existing } = await sb.from('leads').select('id')
+      .eq('user_id', currentUser.id).eq('telefone', phone.e164).maybeSingle();
+    if (existing) {
+      errEl.textContent = 'Já existe um lead com esse telefone na sua base.';
+      errEl.classList.remove('hidden'); return;
+    }
+    const { error } = await sb.from('leads').insert({ ...lead, user_id: currentUser.id });
+    if (error) { errEl.textContent = 'Erro ao salvar: ' + error.message; errEl.classList.remove('hidden'); return; }
+    await carregarLeads();
+  } else {
+    LEADS_REAIS.unshift({ ...lead, id: 'demo-'+Math.random(), status_funil: 'novo', created_at: new Date().toISOString() });
+    atualizarTelas();
+  }
+
+  closeNovoLead();
+  showToastInfo('✓ Lead adicionado!');
+}
+
+// ============== NOVA CAMPANHA ==============
+function openNewCampaign() {
+  // Popular dropdown de templates iniciais (inicial_1, inicial_2)
+  const sel = document.getElementById('ncTemplate');
+  const iniciais = TEMPLATES.filter(t => t.tipoDb === 'inicial_1' || t.tipoDb === 'inicial_2');
+  if (iniciais.length === 0) {
+    sel.innerHTML = '<option value="">Crie um template inicial primeiro</option>';
+  } else {
+    sel.innerHTML = iniciais.map((t, i) => `<option value="${TEMPLATES.indexOf(t)}">${t.nome} (${t.tipo})</option>`).join('');
+  }
+
+  // Popular datalist de segmentos com base nos leads reais
+  const dl = document.getElementById('segmentosCampanha');
+  const segs = getSegmentosUnicos();
+  dl.innerHTML = segs.map(s => `<option value="${s}">`).join('');
+
+  // Limpar campos
+  document.getElementById('ncNome').value = '';
+  document.getElementById('ncCidade').value = '';
+  document.getElementById('ncSegmento').value = '';
+
+  atualizarEstimativaCampanha();
+  document.getElementById('newCampaignModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function closeNewCampaign() {
+  document.getElementById('newCampaignModal').classList.add('hidden');
+}
+
+function atualizarEstimativaCampanha() {
+  const cidade = (document.getElementById('ncCidade').value || '').trim().toLowerCase();
+  const segmento = (document.getElementById('ncSegmento').value || '').trim().toLowerCase();
+
+  const filtrados = LEADS.filter(l => {
+    if (!l._raw || !l._raw.whatsapp_apto) return false;
+    if (l.status !== 'Novo') return false; // Campanha só pega leads novos
+    if (cidade && !(l.cidadeOnly || '').toLowerCase().includes(cidade)) return false;
+    if (segmento && !(l.seg || '').toLowerCase().includes(segmento)) return false;
+    return true;
+  });
+
+  const txt = document.getElementById('ncEstimativaTexto');
+  if (filtrados.length === 0) {
+    txt.textContent = 'Nenhum lead apto se encaixa nesses filtros';
+  } else {
+    txt.textContent = `${filtrados.length} lead${filtrados.length>1?'s':''} apto${filtrados.length>1?'s':''} ser${filtrados.length>1?'ão':'á'} incluído${filtrados.length>1?'s':''} nesta campanha`;
+  }
+}
+
+async function criarCampanha() {
+  const nome = document.getElementById('ncNome').value.trim();
+  const tplIdx = document.getElementById('ncTemplate').value;
+  const cidade = document.getElementById('ncCidade').value.trim();
+  const segmento = document.getElementById('ncSegmento').value.trim();
+
+  if (!nome) { alert('Dê um nome pra campanha'); return; }
+  if (tplIdx === '' || tplIdx === undefined) { alert('Selecione um template'); return; }
+
+  const filtrados = LEADS.filter(l => {
+    if (!l._raw || !l._raw.whatsapp_apto) return false;
+    if (l.status !== 'Novo') return false;
+    if (cidade && !(l.cidadeOnly || '').toLowerCase().includes(cidade.toLowerCase())) return false;
+    if (segmento && !(l.seg || '').toLowerCase().includes(segmento.toLowerCase())) return false;
+    return true;
+  });
+
+  if (filtrados.length === 0) { alert('Nenhum lead se encaixa. Ajuste os filtros.'); return; }
+
+  const tpl = TEMPLATES[Number(tplIdx)];
+  const filtros = { cidade, segmento };
+
+  // Salva no Supabase
+  if (sb && currentUser) {
+    const { data: camp, error } = await sb.from('campaigns').insert({
+      user_id: currentUser.id,
+      nome,
+      template_id: (tpl.id && !String(tpl.id).startsWith('demo-')) ? tpl.id : null,
+      filtros,
+      status: 'enviando',
+      total_leads: filtrados.length,
+      iniciada_em: new Date().toISOString(),
+    }).select().single();
+    if (error) { alert('Erro: ' + error.message); return; }
+
+    // Cria entradas em campaign_leads
+    if (camp) {
+      const inserts = filtrados.map(l => ({
+        campaign_id: camp.id, lead_id: l.id, user_id: currentUser.id, status: 'pendente',
+      }));
+      await sb.from('campaign_leads').insert(inserts);
+    }
+  }
+
+  // Adiciona à lista local
+  CAMPANHAS.unshift({
+    id: 'demo-'+Math.random(), nome, status:'Em execução',
+    leads: filtrados.length, enviados: 0, respostas: 0, taxa: 0, cor: 'blue',
+  });
+
+  closeNewCampaign();
+  renderCampanhas();
+  showToastInfo(`✓ Campanha criada com ${filtrados.length} leads!`);
+
+  // Sugere ir pra Leads pra começar a disparar
+  setTimeout(() => {
+    if (confirm(`Campanha criada! Quer ir agora pra tela de Leads e começar a disparar pros ${filtrados.length} leads?`)) {
+      goTo('leads');
+    }
+  }, 800);
 }
 
 // ============== DASHBOARD DINÂMICO ==============
@@ -2487,27 +2972,142 @@ function renderDashboard() {
   // KPIs calculados dos leads
   const total = LEADS.length;
   const contatados = LEADS.filter(l => l.status === 'Contatado' || l.status === 'Respondeu' || l.status === 'Reunião' || l.status === 'Cliente').length;
-  const responderam = LEADS.filter(l => l.status === 'Respondeu' || l.status === 'Reunião' || l.status === 'Cliente').length;
   const reunioes = APPOINTMENTS_REAIS.filter(a => new Date(a.data_hora) >= new Date()).length;
   const ligacoes = LEADS.filter(l => l.status === 'Respondeu').length;
+  const aptos = LEADS.filter(l => l._raw && l._raw.whatsapp_apto).length;
 
   setText('kpiLeads', total);
   setText('kpiConversas', contatados);
   setText('kpiReunioes', reunioes);
   setText('kpiLigacoes', ligacoes);
 
-  // Origem dos leads
+  // Subtitle da página de Leads
+  const sub = document.getElementById('leadsSubtitle');
+  if (sub) sub.textContent = total === 0 ? '0 leads' : `${total} lead${total>1?'s':''} · ${aptos} apto${aptos>1?'s':''} para WhatsApp`;
+
   renderOrigemList();
-  // Atividade recente
   renderAtividadeRecente();
-  // Próximas reuniões
   renderProximasReunioes();
+  renderInboxCounts();
+  renderDashChart();
+  renderNotificacoes();
+}
+
+function renderInboxCounts() {
+  const todos = MESSAGES_RECENTES.length;
+  const interessados = MESSAGES_RECENTES.filter(m => m.classificacao_ia === 'interessado').length;
+  const duvidas = MESSAGES_RECENTES.filter(m => m.classificacao_ia === 'duvida').length;
+  const naos = MESSAGES_RECENTES.filter(m => m.classificacao_ia === 'nao_interessado' || m.classificacao_ia === 'opt_out').length;
+  setText('cntTodos', todos);
+  setText('cntInteressado', interessados);
+  setText('cntDuvida', duvidas);
+  setText('cntNao', naos);
 }
 
 function setText(id, txt) {
   const el = document.getElementById(id);
   if (el) el.textContent = txt;
 }
+
+// ============== NOTIFICAÇÕES (follow-ups + ligações pendentes) ==============
+function calcularPendencias() {
+  const hoje = new Date();
+  const pendencias = [];
+
+  // Ligações pendentes (leads que responderam)
+  LEADS.filter(l => l.status === 'Respondeu').forEach(l => {
+    pendencias.push({
+      tipo:'ligacao', icone:'phone', cor:'yellow',
+      titulo: `📞 Ligar para ${l.responsavel || l.empresa}`,
+      detalhe: `Lead respondeu — está esperando seu retorno`,
+      leadId: l.id,
+    });
+  });
+
+  // Follow-ups vencidos (Contatado há > 3 dias sem resposta)
+  LEADS.filter(l => l.status === 'Contatado').forEach(l => {
+    const ult = l._raw && l._raw.ultimo_contato ? new Date(l._raw.ultimo_contato) : null;
+    if (!ult) return;
+    const dias = Math.floor((hoje.getTime() - ult.getTime()) / 86400000);
+    if (dias >= 3) {
+      pendencias.push({
+        tipo:'followup', icone:'clock', cor:'blue',
+        titulo: `⏰ Follow-up: ${l.responsavel || l.empresa}`,
+        detalhe: `Sem resposta há ${dias} dias — hora de mandar follow-up`,
+        leadId: l.id,
+      });
+    }
+  });
+
+  // Reuniões hoje
+  APPOINTMENTS_REAIS.forEach(a => {
+    const dt = new Date(a.data_hora);
+    const eHoje = dt.toDateString() === hoje.toDateString();
+    if (eHoje && a.status === 'agendada') {
+      const empresa = a.leads?.nome_empresa || '—';
+      pendencias.push({
+        tipo:'reuniao', icone:'calendar-check', cor:'orange',
+        titulo: `📅 Reunião hoje: ${empresa}`,
+        detalhe: `${dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})} · ${a.modalidade || 'online'}`,
+        leadId: a.lead_id,
+      });
+    }
+  });
+
+  return pendencias;
+}
+
+function renderNotificacoes() {
+  const pendencias = calcularPendencias();
+  const badge = document.getElementById('notifBadge');
+  if (badge) {
+    if (pendencias.length === 0) badge.classList.add('hidden');
+    else { badge.classList.remove('hidden'); badge.textContent = pendencias.length > 9 ? '9+' : pendencias.length; }
+  }
+}
+
+function abrirNotificacoes() {
+  const panel = document.getElementById('notifPanel');
+  const open = !panel.classList.contains('hidden');
+  if (open) { panel.classList.add('hidden'); return; }
+
+  const pendencias = calcularPendencias();
+  const list = document.getElementById('notifList');
+  const sub = document.getElementById('notifSubtitle');
+
+  sub.textContent = pendencias.length === 0 ? 'Nada pendente — tudo em dia!' : `${pendencias.length} ação${pendencias.length>1?'ões':''} esperando você`;
+
+  if (pendencias.length === 0) {
+    list.innerHTML = `<div class="p-8 text-center"><i data-lucide="check-circle-2" class="w-12 h-12 mx-auto text-green-500 mb-2"></i><p class="text-sm text-slate-500">Tudo em dia! 🎉</p></div>`;
+  } else {
+    const corMap = { yellow:'bg-yellow-50 text-yellow-700', blue:'bg-blue-50 text-trivium-blue', orange:'bg-orange-50 text-orange-600' };
+    list.innerHTML = pendencias.map(p => `
+      <button onclick="document.getElementById('notifPanel').classList.add('hidden'); ${p.tipo === 'reuniao' ? 'openReunioesModal()' : `openWhatsAppSend('${p.leadId}')`}" class="w-full text-left p-4 hover:bg-slate-50 transition flex items-start gap-3">
+        <div class="w-9 h-9 rounded-lg ${corMap[p.cor]} flex items-center justify-center flex-shrink-0">
+          <i data-lucide="${p.icone}" class="w-4 h-4"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="font-medium text-sm text-slate-900">${p.titulo}</div>
+          <div class="text-xs text-slate-500 mt-0.5">${p.detalhe}</div>
+        </div>
+      </button>
+    `).join('');
+  }
+
+  panel.classList.remove('hidden');
+  lucide.createIcons();
+}
+
+// Fecha o painel se clicar fora
+document.addEventListener('click', (e) => {
+  const panel = document.getElementById('notifPanel');
+  const btn = document.getElementById('btnNotificacoes');
+  if (panel && !panel.classList.contains('hidden')) {
+    if (!panel.contains(e.target) && !btn.contains(e.target)) {
+      panel.classList.add('hidden');
+    }
+  }
+});
 
 function renderOrigemList() {
   const list = document.getElementById('origemList');
@@ -3278,10 +3878,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // Render chart when dashboard loads
-  setTimeout(renderChart, 100);
-  const observer = new MutationObserver(() => { setTimeout(renderChart, 50); });
+  // Render chart when dashboard becomes visible
+  const observer = new MutationObserver(() => { setTimeout(renderDashChart, 100); });
   observer.observe(document.querySelector('[data-page="dashboard"]'), { attributes:true, attributeFilter:['class'] });
+  setTimeout(renderDashChart, 200);
 });
 </script>
 
