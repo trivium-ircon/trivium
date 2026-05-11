@@ -1859,6 +1859,7 @@ async function enterApp(user) {
         carregarAppointments(),
         carregarMessagesRecentes(),
         carregarTemplates(),
+        carregarCampanhas(),
       ]);
     } catch(e) { console.warn('carregar dados', e); }
   }
@@ -2615,6 +2616,9 @@ async function marcarComoEnviada() {
         direcao: 'enviada',
         conteudo: mensagem,
       });
+
+      // Sincroniza contadores de campanha (se este lead estiver em alguma campanha)
+      await sincronizarCampanhaParaLead(lead.id, 'enviado');
     } catch(e) { console.error('marcar enviada', e); }
   }
 
@@ -2753,6 +2757,9 @@ async function salvarRespondeu() {
           motivo: 'manual',
         });
       }
+
+      // Sincroniza contadores de campanha (se este lead estiver em alguma)
+      await sincronizarCampanhaParaLead(lead.id, 'respondeu');
     } catch(e) { console.error('salvar respondeu', e); }
   }
 
@@ -2852,6 +2859,75 @@ async function salvarNovoLead() {
 
   closeNovoLead();
   showToastInfo('✓ Lead adicionado!');
+}
+
+// ============== CARREGAR CAMPANHAS ==============
+async function carregarCampanhas() {
+  if (!sb || !currentUser) return;
+  const { data, error } = await sb.from('campaigns')
+    .select('*').eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false });
+  if (error) { console.warn('carregarCampanhas', error); return; }
+
+  const statusMap = {
+    'rascunho':'Rascunho','enviando':'Em execução','pausada':'Pausada','concluida':'Concluída',
+  };
+  const corMap = {
+    'rascunho':'slate','enviando':'blue','pausada':'yellow','concluida':'green',
+  };
+
+  CAMPANHAS.length = 0;
+  (data || []).forEach(c => {
+    const taxa = c.total_enviados > 0 ? Math.round((c.total_respostas / c.total_enviados) * 100) : 0;
+    CAMPANHAS.push({
+      id: c.id, nome: c.nome,
+      status: statusMap[c.status] || 'Rascunho',
+      leads: c.total_leads || 0,
+      enviados: c.total_enviados || 0,
+      respostas: c.total_respostas || 0,
+      taxa,
+      cor: corMap[c.status] || 'slate',
+    });
+  });
+  renderCampanhas();
+}
+
+// Sincroniza campaign_leads + counter de campaigns quando um lead muda status
+async function sincronizarCampanhaParaLead(leadId, novoStatus) {
+  // novoStatus: 'enviado' ou 'respondeu'
+  if (!sb || !currentUser || !leadId || String(leadId).startsWith('demo-')) return;
+
+  // Status atual que vamos buscar (antes de atualizar)
+  const statusBusca = novoStatus === 'enviado' ? ['pendente'] : ['pendente','enviado'];
+
+  const { data: cls } = await sb.from('campaign_leads')
+    .select('id, campaign_id')
+    .eq('lead_id', leadId)
+    .in('status', statusBusca);
+
+  if (!cls || cls.length === 0) return;
+
+  const clIds = cls.map(c => c.id);
+  const updateFields = { status: novoStatus };
+  if (novoStatus === 'enviado') updateFields.enviado_em = new Date().toISOString();
+  if (novoStatus === 'respondeu') updateFields.respondeu_em = new Date().toISOString();
+
+  await sb.from('campaign_leads').update(updateFields).in('id', clIds);
+
+  // Atualiza counters das campanhas afetadas
+  const campaignIds = [...new Set(cls.map(c => c.campaign_id))];
+  for (const cid of campaignIds) {
+    const qtdLead = cls.filter(c => c.campaign_id === cid).length;
+    const { data: camp } = await sb.from('campaigns')
+      .select('total_enviados, total_respostas').eq('id', cid).single();
+    if (!camp) continue;
+    const updates = {};
+    if (novoStatus === 'enviado') updates.total_enviados = (camp.total_enviados || 0) + qtdLead;
+    if (novoStatus === 'respondeu') updates.total_respostas = (camp.total_respostas || 0) + qtdLead;
+    await sb.from('campaigns').update(updates).eq('id', cid);
+  }
+
+  await carregarCampanhas();
 }
 
 // ============== NOVA CAMPANHA ==============
