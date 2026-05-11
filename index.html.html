@@ -2090,28 +2090,81 @@ async function dropLead(e, col) {
   }
 }
 
+let inboxFilter = 'todos';
+
+function setInboxFilter(filter) {
+  inboxFilter = filter;
+  document.querySelectorAll('.inbox-filter').forEach(b => {
+    b.classList.remove('bg-trivium-blue','text-white','font-medium','border-trivium-blue');
+    b.classList.add('bg-white','border','border-slate-200','text-slate-600');
+  });
+  const active = document.querySelector(`.inbox-filter[data-filter="${filter}"]`);
+  if (active) {
+    active.classList.remove('bg-white','border-slate-200','text-slate-600');
+    active.classList.add('bg-trivium-blue','text-white','font-medium');
+  }
+  renderInbox();
+}
+
 function renderInbox() {
   const list = document.getElementById('inboxList');
   if (!list) return;
-  if (INBOX.length === 0) {
+
+  // Aplica filtro
+  let filtered = MESSAGES_RECENTES;
+  if (inboxFilter === 'interessado') {
+    filtered = MESSAGES_RECENTES.filter(m => m.classificacao_ia === 'interessado');
+  } else if (inboxFilter === 'duvida') {
+    filtered = MESSAGES_RECENTES.filter(m => m.classificacao_ia === 'duvida' || (m.classificacao_ia && m.classificacao_ia.startsWith('objecao_')));
+  } else if (inboxFilter === 'nao_interessado') {
+    filtered = MESSAGES_RECENTES.filter(m => m.classificacao_ia === 'nao_interessado' || m.classificacao_ia === 'opt_out');
+  }
+
+  if (filtered.length === 0) {
+    const msgs = {
+      'todos': { titulo: 'Nenhuma resposta ainda', sub: 'Quando os leads responderem, aparecem aqui' },
+      'interessado': { titulo: 'Nenhum lead interessado ainda', sub: 'Quando classificar uma resposta como Interessado, aparece aqui' },
+      'duvida': { titulo: 'Nenhuma dúvida/objeção registrada', sub: 'Respostas classificadas como Dúvida ou Objeção aparecem aqui' },
+      'nao_interessado': { titulo: 'Nenhum lead descartado', sub: 'Respostas "Não interessado" ou "Pediu pra parar" aparecem aqui' },
+    };
+    const m = msgs[inboxFilter] || msgs.todos;
     list.innerHTML = `<div class="bg-white border border-slate-200 rounded-xl p-12 text-center">
       <i data-lucide="inbox" class="w-12 h-12 mx-auto text-slate-300 mb-3"></i>
-      <p class="text-slate-500 font-medium mb-1">Nenhuma resposta ainda</p>
-      <p class="text-xs text-slate-400">Quando os leads responderem, aparecem aqui</p>
+      <p class="text-slate-500 font-medium mb-1">${m.titulo}</p>
+      <p class="text-xs text-slate-400">${m.sub}</p>
     </div>`;
     lucide.createIcons();
     return;
   }
-  list.innerHTML = INBOX.map(m => `
-    <div class="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-sm cursor-pointer" onclick="goTo('leadDetail')">
+
+  const labelMap = {
+    interessado: { bg:'bg-green-100 text-green-700', label:'Interessado' },
+    duvida: { bg:'bg-yellow-100 text-yellow-700', label:'Dúvida' },
+    nao_interessado: { bg:'bg-red-100 text-red-700', label:'Não interessado' },
+    opt_out: { bg:'bg-slate-100 text-slate-700', label:'Pediu pra parar' },
+    objecao_contador: { bg:'bg-orange-100 text-orange-700', label:'Objeção: já tem contador' },
+    objecao_preco: { bg:'bg-orange-100 text-orange-700', label:'Objeção: preço' },
+    objecao_pensar: { bg:'bg-orange-100 text-orange-700', label:'Objeção: vai pensar' },
+    objecao_interna: { bg:'bg-orange-100 text-orange-700', label:'Objeção: resolve internamente' },
+    objecao_urgencia: { bg:'bg-orange-100 text-orange-700', label:'Objeção: sem urgência' },
+    objecao_outras: { bg:'bg-orange-100 text-orange-700', label:'Objeção: outras' },
+  };
+
+  list.innerHTML = filtered.map(m => {
+    const empresa = m.leads?.nome_empresa || 'Lead';
+    const resp = m.leads?.nome_responsavel || '';
+    const leadId = m.lead_id || m.leads?.id || '';
+    const tag = labelMap[m.classificacao_ia] || { bg:'bg-blue-100 text-blue-700', label:'Recebida' };
+    return `<div class="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-sm cursor-pointer transition" onclick="openMarcarRespondeu('${leadId}')">
       <div class="flex items-center justify-between mb-1">
-        <span class="font-semibold text-slate-900">${m.empresa}</span>
-        <span class="text-xs text-slate-400">${m.time}</span>
+        <span class="font-semibold text-slate-900">${empresa}${resp ? ' · ' + resp : ''}</span>
+        <span class="text-xs text-slate-400">${formatRelativeTime(m.enviada_em)}</span>
       </div>
-      <p class="text-sm text-slate-600 mb-2">${m.msg}</p>
-      <span class="text-[10px] font-semibold uppercase tracking-wide ${LABEL_COLORS[m.tag]} px-2 py-0.5 rounded">${m.label}</span>
-    </div>
-  `).join('');
+      <p class="text-sm text-slate-600 mb-2">${m.conteudo}</p>
+      <span class="text-[10px] font-semibold uppercase tracking-wide ${tag.bg} px-2 py-0.5 rounded">${tag.label}</span>
+    </div>`;
+  }).join('');
+  lucide.createIcons();
 }
 
 function renderCampanhas() {
@@ -2762,12 +2815,18 @@ async function salvarRespondeu() {
 
       // Sincroniza contadores de campanha (se este lead estiver em alguma)
       await sincronizarCampanhaParaLead(lead.id, 'respondeu');
+
+      // Recarrega mensagens recentes pra Inbox + dashboard ficarem atualizados
+      await carregarMessagesRecentes();
     } catch(e) { console.error('salvar respondeu', e); }
   }
 
   closeRespondeu();
   renderLeadsTable();
   renderKanban();
+  renderInbox();
+  renderAtividadeRecente();
+  renderInboxCounts();
 
   // Se foi objeção → abre WhatsApp send modal com template de contorno
   if (respClassificacao === 'objecao' && respObjecaoTipo) {
@@ -3065,10 +3124,10 @@ async function carregarAppointments() {
 async function carregarMessagesRecentes() {
   if (!sb || !currentUser) return;
   const { data } = await sb.from('messages')
-    .select('*, leads(nome_empresa, nome_responsavel)')
+    .select('*, leads(id, nome_empresa, nome_responsavel)')
     .eq('direcao', 'recebida')
     .order('enviada_em', { ascending: false })
-    .limit(10);
+    .limit(100);
   MESSAGES_RECENTES = data || [];
 }
 
@@ -4076,6 +4135,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderCampanhas();
   renderTemplates();
   renderDashboard();
+  setInboxFilter('todos');
   setMetasPeriod('diaria');
 
   // Auth init
