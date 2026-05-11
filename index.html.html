@@ -416,6 +416,20 @@
           </div>
         </div>
 
+        <!-- Barra de ações em massa (aparece quando leads são selecionados) -->
+        <div id="bulkActionBar" class="hidden bg-blue-50 border border-blue-200 rounded-xl p-3 mb-3 flex items-center justify-between">
+          <div class="flex items-center gap-2 text-sm">
+            <i data-lucide="check-square" class="w-4 h-4 text-trivium-blue"></i>
+            <span><strong id="bulkSelectedCount">0</strong> lead(s) selecionado(s)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="limparSelecao()" class="text-sm text-slate-600 hover:text-slate-900">Cancelar</button>
+            <button onclick="excluirSelecionados()" class="bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-red-700 flex items-center gap-1.5">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>Excluir selecionados
+            </button>
+          </div>
+        </div>
+
         <div class="bg-white border border-slate-200 rounded-xl">
           <div class="p-4 border-b border-slate-100 flex items-center gap-3 flex-wrap">
             <div class="relative flex-1 min-w-[240px]">
@@ -439,7 +453,7 @@
           <table class="w-full text-sm">
             <thead>
               <tr class="text-left text-xs uppercase tracking-wider text-slate-500 border-b border-slate-100">
-                <th class="px-4 py-3 font-semibold"><input type="checkbox" /></th>
+                <th class="px-4 py-3 font-semibold"><input type="checkbox" id="selectAllLeads" onchange="toggleSelectAll(this.checked)" /></th>
                 <th class="px-4 py-3 font-semibold">Empresa</th>
                 <th class="px-4 py-3 font-semibold">Responsável</th>
                 <th class="px-4 py-3 font-semibold">Telefone</th>
@@ -1894,7 +1908,7 @@ function renderLeadsTable() {
   }
   tbody.innerHTML = LEADS.map(l => `
     <tr class="hover:bg-slate-50">
-      <td class="px-4 py-3"><input type="checkbox" /></td>
+      <td class="px-4 py-3"><input type="checkbox" class="lead-checkbox" data-leadid="${l.id}" ${LEADS_SELECIONADOS.has(String(l.id))?'checked':''} onchange="toggleLeadSelected('${l.id}', this.checked)" /></td>
       <td class="px-4 py-3 font-medium text-slate-900 cursor-pointer" onclick="goTo('leadDetail')">${l.empresa}</td>
       <td class="px-4 py-3 text-slate-700">${l.responsavel || '<span class="text-slate-400 italic">—</span>'}</td>
       <td class="px-4 py-3 text-slate-600">${l.tel}</td>
@@ -1909,13 +1923,14 @@ function renderLeadsTable() {
           <button onclick="openMarcarRespondeu('${l.id}')" title="Lead respondeu" class="p-1.5 rounded-md hover:bg-purple-50 text-purple-600 hover:text-purple-700 transition">
             <i data-lucide="message-square-reply" class="w-4 h-4"></i>
           </button>
-          <button onclick="goTo('leadDetail')" title="Detalhes" class="p-1.5 rounded-md hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition">
-            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          <button onclick="excluirLead('${l.id}')" title="Excluir lead" class="p-1.5 rounded-md hover:bg-red-50 text-red-500 hover:text-red-700 transition">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
           </button>
         </div>
       </td>
     </tr>
   `).join('');
+  atualizarBarraSelecao();
   lucide.createIcons();
 }
 
@@ -3299,6 +3314,79 @@ function openLigacoesModal() {
 
   document.getElementById('ligacoesModal').classList.remove('hidden');
   lucide.createIcons();
+}
+
+// ============== SELEÇÃO E EXCLUSÃO DE LEADS ==============
+const LEADS_SELECIONADOS = new Set();
+
+function toggleLeadSelected(leadId, checked) {
+  if (checked) LEADS_SELECIONADOS.add(String(leadId));
+  else LEADS_SELECIONADOS.delete(String(leadId));
+  atualizarBarraSelecao();
+}
+
+function toggleSelectAll(checked) {
+  document.querySelectorAll('.lead-checkbox').forEach(cb => {
+    cb.checked = checked;
+    const id = cb.getAttribute('data-leadid');
+    if (checked) LEADS_SELECIONADOS.add(String(id));
+    else LEADS_SELECIONADOS.delete(String(id));
+  });
+  atualizarBarraSelecao();
+}
+
+function limparSelecao() {
+  LEADS_SELECIONADOS.clear();
+  document.querySelectorAll('.lead-checkbox').forEach(cb => cb.checked = false);
+  const sa = document.getElementById('selectAllLeads');
+  if (sa) sa.checked = false;
+  atualizarBarraSelecao();
+}
+
+function atualizarBarraSelecao() {
+  const count = LEADS_SELECIONADOS.size;
+  const bar = document.getElementById('bulkActionBar');
+  if (!bar) return;
+  if (count === 0) {
+    bar.classList.add('hidden');
+  } else {
+    bar.classList.remove('hidden');
+    setText('bulkSelectedCount', count);
+  }
+}
+
+async function excluirLead(leadId) {
+  const lead = LEADS.find(l => String(l.id) === String(leadId));
+  if (!lead) return;
+  if (!confirm(`Excluir o lead "${lead.empresa}"? Toda a conversa e histórico serão apagados. Esta ação não pode ser desfeita.`)) return;
+
+  if (sb && currentUser && !String(leadId).startsWith('demo-')) {
+    const { error } = await sb.from('leads').delete().eq('id', leadId);
+    if (error) { alert('Erro ao excluir: ' + error.message); return; }
+  }
+  LEADS_REAIS = LEADS_REAIS.filter(l => String(l.id) !== String(leadId));
+  LEADS_SELECIONADOS.delete(String(leadId));
+  atualizarTelas();
+  showToastInfo('✓ Lead excluído');
+}
+
+async function excluirSelecionados() {
+  const count = LEADS_SELECIONADOS.size;
+  if (count === 0) return;
+  if (!confirm(`Excluir ${count} lead(s) selecionado(s)? Todas as conversas e históricos serão apagados. Esta ação não pode ser desfeita.`)) return;
+
+  const ids = Array.from(LEADS_SELECIONADOS);
+  if (sb && currentUser) {
+    const idsReais = ids.filter(id => !String(id).startsWith('demo-'));
+    if (idsReais.length > 0) {
+      const { error } = await sb.from('leads').delete().in('id', idsReais);
+      if (error) { alert('Erro ao excluir: ' + error.message); return; }
+    }
+  }
+  LEADS_REAIS = LEADS_REAIS.filter(l => !LEADS_SELECIONADOS.has(String(l.id)));
+  LEADS_SELECIONADOS.clear();
+  atualizarTelas();
+  showToastInfo(`✓ ${count} lead(s) excluído(s)`);
 }
 
 // Origem buttons handler — captura seleção
