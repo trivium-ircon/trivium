@@ -1064,7 +1064,7 @@
         </div>
       </div>
       <div class="sticky bottom-0 bg-white border-t border-slate-100 p-4 flex gap-2 justify-between">
-        <button class="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-1.5"><i data-lucide="trash-2" class="w-4 h-4"></i>Excluir</button>
+        <button onclick="excluirCampanha()" class="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-1.5"><i data-lucide="trash-2" class="w-4 h-4"></i>Excluir campanha</button>
         <div class="flex gap-2">
           <button onclick="closeEditCampaign()" class="border border-slate-200 px-4 py-2 rounded-lg text-sm">Cancelar</button>
           <button onclick="saveEditCampaign()" class="bg-trivium-blue text-white px-5 py-2 rounded-lg text-sm font-medium">Salvar</button>
@@ -2142,7 +2142,9 @@ function renderCampanhas() {
           <button onclick="openEditCampaign(${i})" class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg hover:bg-slate-50 flex items-center gap-1.5">
             <i data-lucide="pencil" class="w-3.5 h-3.5"></i>Editar
           </button>
-          <button class="p-2 hover:bg-slate-100 rounded-lg"><i data-lucide="more-vertical" class="w-4 h-4 text-slate-500"></i></button>
+          <button onclick="excluirCampanhaDireto(${i})" title="Excluir campanha" class="p-2 rounded-lg hover:bg-red-50 text-red-500 hover:text-red-700 transition">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
         </div>
       </div>
       <div class="grid grid-cols-4 gap-4 mb-4">
@@ -3798,16 +3800,65 @@ function openEditCampaign(idx) {
   lucide.createIcons();
 }
 function closeEditCampaign() { document.getElementById('editCampaignModal').classList.add('hidden'); }
-function saveEditCampaign() {
+async function saveEditCampaign() {
   if (editingCampIdx === null) return;
-  CAMPANHAS[editingCampIdx].nome = document.getElementById('editCampName').value;
-  const status = document.getElementById('editCampStatus').value;
-  CAMPANHAS[editingCampIdx].status = status;
+  const camp = CAMPANHAS[editingCampIdx];
+  const novoNome = document.getElementById('editCampName').value;
+  const novoStatus = document.getElementById('editCampStatus').value;
+  const statusMap = { 'Em execução':'enviando', 'Concluída':'concluida', 'Pausada':'pausada', 'Rascunho':'rascunho' };
   const colorMap = { 'Em execução':'blue', 'Concluída':'green', 'Pausada':'yellow', 'Rascunho':'slate' };
-  CAMPANHAS[editingCampIdx].cor = colorMap[status] || 'slate';
+
+  camp.nome = novoNome;
+  camp.status = novoStatus;
+  camp.cor = colorMap[novoStatus] || 'slate';
+
+  // Persiste no Supabase
+  if (sb && currentUser && camp.id && !String(camp.id).startsWith('demo-')) {
+    const { error } = await sb.from('campaigns').update({
+      nome: novoNome,
+      status: statusMap[novoStatus] || 'rascunho',
+    }).eq('id', camp.id);
+    if (error) { alert('Erro ao salvar: ' + error.message); return; }
+  }
+
   closeEditCampaign();
   renderCampanhas();
   showToastInfo('Campanha salva com sucesso');
+}
+
+// Excluir campanha (via modal de edição)
+async function excluirCampanha() {
+  if (editingCampIdx === null) return;
+  const camp = CAMPANHAS[editingCampIdx];
+  if (!confirm(`Excluir a campanha "${camp.nome}"? Os leads NÃO serão apagados — apenas a campanha em si.`)) return;
+
+  if (sb && currentUser && camp.id && !String(camp.id).startsWith('demo-')) {
+    // campaign_leads são apagados em cascata (ON DELETE CASCADE no schema)
+    const { error } = await sb.from('campaigns').delete().eq('id', camp.id);
+    if (error) { alert('Erro ao excluir: ' + error.message); return; }
+  }
+
+  CAMPANHAS.splice(editingCampIdx, 1);
+  editingCampIdx = null;
+  closeEditCampaign();
+  renderCampanhas();
+  showToastInfo('✓ Campanha excluída');
+}
+
+// Excluir campanha (botão direto no card, sem abrir modal)
+async function excluirCampanhaDireto(idx) {
+  const camp = CAMPANHAS[idx];
+  if (!camp) return;
+  if (!confirm(`Excluir a campanha "${camp.nome}"? Os leads NÃO serão apagados — apenas a campanha em si.`)) return;
+
+  if (sb && currentUser && camp.id && !String(camp.id).startsWith('demo-')) {
+    const { error } = await sb.from('campaigns').delete().eq('id', camp.id);
+    if (error) { alert('Erro ao excluir: ' + error.message); return; }
+  }
+
+  CAMPANHAS.splice(idx, 1);
+  renderCampanhas();
+  showToastInfo('✓ Campanha excluída');
 }
 
 // ============== TEMPLATES (CRUD + carregamento) ==============
