@@ -236,7 +236,7 @@
         <i data-lucide="filter" class="w-4 h-4"></i><span>Funil</span>
       </button>
       <button onclick="goTo('inbox')" data-nav="inbox" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
-        <i data-lucide="inbox" class="w-4 h-4"></i><span>Caixa de entrada</span>
+        <i data-lucide="messages-square" class="w-4 h-4"></i><span>Conversas</span>
         <span class="ml-auto w-2 h-2 bg-red-500 rounded-full pulse-dot"></span>
       </button>
       <button onclick="goTo('metas')" data-nav="metas" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
@@ -337,7 +337,7 @@
               <i data-lucide="arrow-up-right" class="w-4 h-4 text-slate-300 group-hover:text-purple-600"></i>
             </div>
             <div class="text-2xl font-bold text-slate-900" id="kpiConversas">0</div>
-            <div class="text-xs text-slate-500 mt-0.5">Conversas iniciadas <span class="text-purple-600 font-medium">· clique pra ver</span></div>
+            <div class="text-xs text-slate-500 mt-0.5">Conversas em andamento <span class="text-purple-600 font-medium">· clique pra ver</span></div>
           </button>
           <button onclick="openReunioesModal()" class="bg-white rounded-xl p-5 border border-slate-200 hover:shadow-md hover:border-orange-300 transition text-left group">
             <div class="flex items-center justify-between mb-3">
@@ -434,19 +434,30 @@
           <div class="p-4 border-b border-slate-100 flex items-center gap-3 flex-wrap">
             <div class="relative flex-1 min-w-[240px]">
               <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-              <input placeholder="Buscar empresa, cidade ou telefone..." class="w-full border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:border-trivium-blue focus:outline-none focus:ring-2 focus:ring-trivium-blue/10" />
+              <input id="leadSearch" oninput="renderLeadsTable()" placeholder="Buscar empresa, responsável, cidade ou telefone..." class="w-full border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:border-trivium-blue focus:outline-none focus:ring-2 focus:ring-trivium-blue/10" />
             </div>
-            <select class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
-              <option>Todos os status</option><option>Novo</option><option>Contatado</option><option>Respondeu</option><option>Reunião</option>
+            <select id="leadFiltroStatus" onchange="renderLeadsTable()" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              <option value="">Todos os status</option>
+              <option value="Novo">Novo</option>
+              <option value="Contatado">Contatado</option>
+              <option value="Respondeu">Respondeu</option>
+              <option value="Reunião">Reunião</option>
+              <option value="Cliente">Cliente</option>
+              <option value="Perdido">Perdido</option>
             </select>
-            <select class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
-              <option>Todos os segmentos</option><option>Médicos</option><option>Advogados</option><option>Clínicas</option>
+            <select id="leadFiltroSegmento" onchange="renderLeadsTable()" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              <option value="">Todos os segmentos</option>
             </select>
-            <select class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
-              <option>Todas as origens</option><option>Manual</option><option>Google</option><option>Parceiro</option>
+            <select id="leadFiltroOrigem" onchange="renderLeadsTable()" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+              <option value="">Todas as origens</option>
+              <option value="Manual">Manual</option>
+              <option value="Google">Google</option>
+              <option value="Instagram">Instagram</option>
+              <option value="Parceiro">Parceiro</option>
+              <option value="Base_antiga">Base antiga</option>
             </select>
-            <button class="border border-slate-200 px-3 py-2 rounded-lg text-sm hover:bg-slate-50">
-              <i data-lucide="filter" class="w-4 h-4 inline mr-1"></i>Mais filtros
+            <button onclick="limparFiltrosLeads()" class="border border-slate-200 px-3 py-2 rounded-lg text-sm hover:bg-slate-50">
+              <i data-lucide="x" class="w-4 h-4 inline mr-1"></i>Limpar
             </button>
           </div>
 
@@ -522,18 +533,18 @@
         <div id="kanbanBoard" class="grid grid-cols-6 gap-4"></div>
       </section>
 
-      <!-- ============ INBOX ============ -->
+      <!-- ============ CONVERSAS (antiga inbox) ============ -->
       <section data-page="inbox" class="page hidden p-8 fade-in">
         <div class="flex items-end justify-between mb-6">
           <div>
-            <h1 class="text-2xl font-bold text-slate-900">Caixa de entrada</h1>
-            <p class="text-slate-500 text-sm mt-1">Respostas dos leads</p>
+            <h1 class="text-2xl font-bold text-slate-900">Conversas</h1>
+            <p class="text-slate-500 text-sm mt-1">Todas as conversas em andamento — contatados, respondidos e em reunião</p>
           </div>
-          <div class="flex gap-2" id="inboxFilters">
-            <button onclick="setInboxFilter('todos')" data-filter="todos" class="inbox-filter px-3 py-2 rounded-lg text-sm">Todos (<span id="cntTodos">0</span>)</button>
-            <button onclick="setInboxFilter('interessado')" data-filter="interessado" class="inbox-filter px-3 py-2 rounded-lg text-sm">Interessados (<span id="cntInteressado">0</span>)</button>
-            <button onclick="setInboxFilter('duvida')" data-filter="duvida" class="inbox-filter px-3 py-2 rounded-lg text-sm">Dúvidas (<span id="cntDuvida">0</span>)</button>
-            <button onclick="setInboxFilter('nao_interessado')" data-filter="nao_interessado" class="inbox-filter px-3 py-2 rounded-lg text-sm">Não interessados (<span id="cntNao">0</span>)</button>
+          <div class="flex gap-2 flex-wrap" id="inboxFilters">
+            <button onclick="setInboxFilter('todos')" data-filter="todos" class="inbox-filter px-3 py-2 rounded-lg text-sm border border-slate-200 bg-white text-slate-600">Todas (<span id="cntTodos">0</span>)</button>
+            <button onclick="setInboxFilter('aguardando')" data-filter="aguardando" class="inbox-filter px-3 py-2 rounded-lg text-sm border border-slate-200 bg-white text-slate-600">Aguardando resposta (<span id="cntAguardando">0</span>)</button>
+            <button onclick="setInboxFilter('responderam')" data-filter="responderam" class="inbox-filter px-3 py-2 rounded-lg text-sm border border-slate-200 bg-white text-slate-600">Responderam (<span id="cntResponderam">0</span>)</button>
+            <button onclick="setInboxFilter('reuniao')" data-filter="reuniao" class="inbox-filter px-3 py-2 rounded-lg text-sm border border-slate-200 bg-white text-slate-600">Em reunião (<span id="cntReuniao">0</span>)</button>
           </div>
         </div>
         <div id="inboxList" class="space-y-2"></div>
@@ -1861,6 +1872,7 @@ async function enterApp(user) {
         carregarTemplates(),
         carregarCampanhas(),
       ]);
+      await calcularMetasAtual();
     } catch(e) { console.warn('carregar dados', e); }
   }
 
@@ -1893,7 +1905,44 @@ function simulateImport() {
 }
 
 // ============== RENDER FUNCTIONS ==============
+function popularFiltroSegmentos() {
+  const sel = document.getElementById('leadFiltroSegmento');
+  if (!sel) return;
+  const valorAtual = sel.value;
+  const segs = getSegmentosUnicos();
+  sel.innerHTML = '<option value="">Todos os segmentos</option>' +
+    segs.map(s => `<option value="${s}">${s}</option>`).join('');
+  sel.value = valorAtual; // restaura seleção
+}
+
+function limparFiltrosLeads() {
+  ['leadSearch','leadFiltroStatus','leadFiltroSegmento','leadFiltroOrigem'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  renderLeadsTable();
+}
+
+function aplicarFiltrosLeads(lista) {
+  const busca = (document.getElementById('leadSearch')?.value || '').toLowerCase().trim();
+  const status = document.getElementById('leadFiltroStatus')?.value || '';
+  const segmento = document.getElementById('leadFiltroSegmento')?.value || '';
+  const origem = document.getElementById('leadFiltroOrigem')?.value || '';
+
+  return lista.filter(l => {
+    if (status && l.status !== status) return false;
+    if (segmento && l.seg !== segmento) return false;
+    if (origem && l.orig !== origem) return false;
+    if (busca) {
+      const texto = `${l.empresa} ${l.responsavel || ''} ${l.cidade} ${l.tel}`.toLowerCase();
+      if (!texto.includes(busca)) return false;
+    }
+    return true;
+  });
+}
+
 function renderLeadsTable() {
+  popularFiltroSegmentos();
   const tbody = document.getElementById('leadsTable');
   if (LEADS.length === 0) {
     tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-16 text-center">
@@ -1907,7 +1956,17 @@ function renderLeadsTable() {
     lucide.createIcons();
     return;
   }
-  tbody.innerHTML = LEADS.map(l => `
+  const filtrados = aplicarFiltrosLeads(LEADS);
+  if (filtrados.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-16 text-center">
+      <i data-lucide="search-x" class="w-12 h-12 mx-auto text-slate-300 mb-3"></i>
+      <p class="text-slate-500 font-medium">Nenhum lead com esses filtros</p>
+      <button onclick="limparFiltrosLeads()" class="mt-3 text-trivium-blue hover:underline text-sm">Limpar filtros</button>
+    </td></tr>`;
+    lucide.createIcons();
+    return;
+  }
+  tbody.innerHTML = filtrados.map(l => `
     <tr class="hover:bg-slate-50">
       <td class="px-4 py-3"><input type="checkbox" class="lead-checkbox" data-leadid="${l.id}" ${LEADS_SELECIONADOS.has(String(l.id))?'checked':''} onchange="toggleLeadSelected('${l.id}', this.checked)" /></td>
       <td class="px-4 py-3 font-medium text-slate-900 cursor-pointer" onclick="goTo('leadDetail')">${l.empresa}</td>
@@ -2101,7 +2160,7 @@ function setInboxFilter(filter) {
   const active = document.querySelector(`.inbox-filter[data-filter="${filter}"]`);
   if (active) {
     active.classList.remove('bg-white','border-slate-200','text-slate-600');
-    active.classList.add('bg-trivium-blue','text-white','font-medium');
+    active.classList.add('bg-trivium-blue','text-white','font-medium','border-trivium-blue');
   }
   renderInbox();
 }
@@ -2110,26 +2169,43 @@ function renderInbox() {
   const list = document.getElementById('inboxList');
   if (!list) return;
 
-  // Aplica filtro
-  let filtered = MESSAGES_RECENTES;
-  if (inboxFilter === 'interessado') {
-    filtered = MESSAGES_RECENTES.filter(m => m.classificacao_ia === 'interessado');
-  } else if (inboxFilter === 'duvida') {
-    filtered = MESSAGES_RECENTES.filter(m => m.classificacao_ia === 'duvida' || (m.classificacao_ia && m.classificacao_ia.startsWith('objecao_')));
-  } else if (inboxFilter === 'nao_interessado') {
-    filtered = MESSAGES_RECENTES.filter(m => m.classificacao_ia === 'nao_interessado' || m.classificacao_ia === 'opt_out');
-  }
+  // Conversas em andamento = leads com status Contatado, Respondeu ou Reunião
+  let conversas = LEADS.filter(l =>
+    l.status === 'Contatado' || l.status === 'Respondeu' || l.status === 'Reunião'
+  );
 
-  if (filtered.length === 0) {
+  // Atualiza contadores dos filtros (sempre baseado no total geral)
+  const cntTotal = conversas.length;
+  const cntAguard = conversas.filter(l => l.status === 'Contatado').length;
+  const cntResp = conversas.filter(l => l.status === 'Respondeu').length;
+  const cntReun = conversas.filter(l => l.status === 'Reunião').length;
+  setText('cntTodos', cntTotal);
+  setText('cntAguardando', cntAguard);
+  setText('cntResponderam', cntResp);
+  setText('cntReuniao', cntReun);
+
+  // Aplica filtro selecionado
+  if (inboxFilter === 'aguardando') conversas = conversas.filter(l => l.status === 'Contatado');
+  else if (inboxFilter === 'responderam') conversas = conversas.filter(l => l.status === 'Respondeu');
+  else if (inboxFilter === 'reuniao') conversas = conversas.filter(l => l.status === 'Reunião');
+
+  // Ordena por último contato (mais recente primeiro)
+  conversas.sort((a, b) => {
+    const aDate = (a._raw && a._raw.ultimo_contato) || (a._raw && a._raw.created_at) || 0;
+    const bDate = (b._raw && b._raw.ultimo_contato) || (b._raw && b._raw.created_at) || 0;
+    return new Date(bDate) - new Date(aDate);
+  });
+
+  if (conversas.length === 0) {
     const msgs = {
-      'todos': { titulo: 'Nenhuma resposta ainda', sub: 'Quando os leads responderem, aparecem aqui' },
-      'interessado': { titulo: 'Nenhum lead interessado ainda', sub: 'Quando classificar uma resposta como Interessado, aparece aqui' },
-      'duvida': { titulo: 'Nenhuma dúvida/objeção registrada', sub: 'Respostas classificadas como Dúvida ou Objeção aparecem aqui' },
-      'nao_interessado': { titulo: 'Nenhum lead descartado', sub: 'Respostas "Não interessado" ou "Pediu pra parar" aparecem aqui' },
+      'todos': { titulo: 'Nenhuma conversa em andamento', sub: 'Quando você enviar a primeira mensagem para um lead, ele aparece aqui' },
+      'aguardando': { titulo: 'Ninguém aguardando resposta', sub: 'Leads contatados que ainda não responderam aparecem aqui' },
+      'responderam': { titulo: 'Nenhum lead respondeu', sub: 'Quando classificar uma resposta de lead, aparece aqui' },
+      'reuniao': { titulo: 'Nenhuma reunião marcada', sub: 'Leads movidos para "Reunião" no funil aparecem aqui' },
     };
     const m = msgs[inboxFilter] || msgs.todos;
     list.innerHTML = `<div class="bg-white border border-slate-200 rounded-xl p-12 text-center">
-      <i data-lucide="inbox" class="w-12 h-12 mx-auto text-slate-300 mb-3"></i>
+      <i data-lucide="messages-square" class="w-12 h-12 mx-auto text-slate-300 mb-3"></i>
       <p class="text-slate-500 font-medium mb-1">${m.titulo}</p>
       <p class="text-xs text-slate-400">${m.sub}</p>
     </div>`;
@@ -2137,34 +2213,45 @@ function renderInbox() {
     return;
   }
 
-  const labelMap = {
-    interessado: { bg:'bg-green-100 text-green-700', label:'Interessado' },
-    duvida: { bg:'bg-yellow-100 text-yellow-700', label:'Dúvida' },
-    nao_interessado: { bg:'bg-red-100 text-red-700', label:'Não interessado' },
-    opt_out: { bg:'bg-slate-100 text-slate-700', label:'Pediu pra parar' },
-    objecao_contador: { bg:'bg-orange-100 text-orange-700', label:'Objeção: já tem contador' },
-    objecao_preco: { bg:'bg-orange-100 text-orange-700', label:'Objeção: preço' },
-    objecao_pensar: { bg:'bg-orange-100 text-orange-700', label:'Objeção: vai pensar' },
-    objecao_interna: { bg:'bg-orange-100 text-orange-700', label:'Objeção: resolve internamente' },
-    objecao_urgencia: { bg:'bg-orange-100 text-orange-700', label:'Objeção: sem urgência' },
-    objecao_outras: { bg:'bg-orange-100 text-orange-700', label:'Objeção: outras' },
+  // Mapa de última mensagem por lead (pra preview)
+  const ultMsgPorLead = {};
+  MESSAGES_RECENTES.forEach(m => {
+    if (m.lead_id && !ultMsgPorLead[m.lead_id]) ultMsgPorLead[m.lead_id] = m;
+  });
+
+  const statusMap = {
+    'Contatado': { bg:'bg-blue-100 text-trivium-blue', label:'Aguardando resposta' },
+    'Respondeu': { bg:'bg-purple-100 text-purple-700', label:'Respondeu' },
+    'Reunião': { bg:'bg-orange-100 text-orange-700', label:'Reunião marcada' },
   };
 
-  list.innerHTML = filtered.map(m => {
-    const empresa = m.leads?.nome_empresa || 'Lead';
-    const resp = m.leads?.nome_responsavel || '';
-    const leadId = m.lead_id || m.leads?.id || '';
-    const tag = labelMap[m.classificacao_ia] || { bg:'bg-blue-100 text-blue-700', label:'Recebida' };
-    return `<div class="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-sm cursor-pointer transition" onclick="openMarcarRespondeu('${leadId}')">
+  list.innerHTML = conversas.map(l => {
+    const status = statusMap[l.status] || { bg:'bg-slate-100 text-slate-700', label:l.status };
+    const ultMsg = ultMsgPorLead[l.id];
+    const previewMsg = ultMsg
+      ? `<p class="text-sm text-slate-600 mt-1 line-clamp-2">"${ultMsg.conteudo}"</p>`
+      : (l.status === 'Contatado' ? `<p class="text-xs text-slate-400 mt-1 italic">Mensagem enviada · aguardando resposta...</p>` : '');
+    const tempo = l.last || 'agora';
+    return `<div class="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-sm cursor-pointer transition" onclick="openMarcarRespondeu('${l.id}')">
       <div class="flex items-center justify-between mb-1">
-        <span class="font-semibold text-slate-900">${empresa}${resp ? ' · ' + resp : ''}</span>
-        <span class="text-xs text-slate-400">${formatRelativeTime(m.enviada_em)}</span>
+        <span class="font-semibold text-slate-900">${l.empresa}${l.responsavel ? ' · ' + l.responsavel : ''}</span>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-slate-400">${tempo}</span>
+          <span class="text-[10px] font-semibold uppercase tracking-wide ${status.bg} px-2 py-0.5 rounded">${status.label}</span>
+        </div>
       </div>
-      <p class="text-sm text-slate-600 mb-2">${m.conteudo}</p>
-      <span class="text-[10px] font-semibold uppercase tracking-wide ${tag.bg} px-2 py-0.5 rounded">${tag.label}</span>
+      ${previewMsg}
+      <div class="flex items-center gap-2 mt-2 text-xs text-slate-500">
+        <span>${l.cidade} · ${l.seg}</span>
+      </div>
     </div>`;
   }).join('');
   lucide.createIcons();
+}
+
+// Atualiza só os contadores dos filtros (chamado pelo renderDashboard original)
+function renderInboxCounts() {
+  // O renderInbox já cuida disso. Mantém função pra compatibilidade.
 }
 
 function renderCampanhas() {
@@ -2674,13 +2761,19 @@ async function marcarComoEnviada() {
 
       // Sincroniza contadores de campanha (se este lead estiver em alguma campanha)
       await sincronizarCampanhaParaLead(lead.id, 'enviado');
+
+      // Recarrega mensagens + recalcula metas (atualização automática)
+      await carregarMessagesRecentes();
+      await calcularMetasAtual();
     } catch(e) { console.error('marcar enviada', e); }
   }
 
   closeWhatsAppSend();
   renderLeadsTable();
   renderKanban();
-  showToastInfo('✓ Marcado como enviado');
+  renderInbox();
+  renderDashboard();
+  showToastInfo('✓ Enviado · Aparecerá em "Conversas"');
 }
 
 // ============== MARCAR RESPONDEU ==============
@@ -2818,6 +2911,7 @@ async function salvarRespondeu() {
 
       // Recarrega mensagens recentes pra Inbox + dashboard ficarem atualizados
       await carregarMessagesRecentes();
+      await calcularMetasAtual();
     } catch(e) { console.error('salvar respondeu', e); }
   }
 
@@ -3555,6 +3649,51 @@ const ANO_CORRENTE = new Date().getFullYear();
 const MES_ATUAL = new Date().getMonth();
 const MESES_LABELS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 let HISTORICO_MENSAL = [];
+
+// Calcula valores atuais das metas a partir do banco (messages + leads + appointments)
+async function calcularMetasAtual() {
+  if (!sb || !currentUser) return;
+
+  const now = new Date();
+  const hoje = new Date(now); hoje.setHours(0,0,0,0);
+  const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1);
+  const inicioAno = new Date(now.getFullYear(), 0, 1);
+
+  // Busca todas as mensagens do usuário
+  const { data: msgs } = await sb.from('messages')
+    .select('direcao, enviada_em, lead_id')
+    .eq('user_id', currentUser.id);
+
+  // Busca appointments do usuário
+  const { data: appts } = await sb.from('appointments')
+    .select('data_hora').eq('user_id', currentUser.id);
+
+  function calcularPeriodo(desde) {
+    const leadsContatados = new Set();
+    let enviadas = 0, recebidas = 0;
+    (msgs || []).forEach(m => {
+      const dt = new Date(m.enviada_em);
+      if (dt < desde) return;
+      if (m.direcao === 'enviada') {
+        enviadas++;
+        if (m.lead_id) leadsContatados.add(m.lead_id);
+      } else if (m.direcao === 'recebida') {
+        recebidas++;
+      }
+    });
+    const taxa = enviadas > 0 ? Math.round((recebidas / enviadas) * 100) : 0;
+    const reunioes = (appts || []).filter(a => new Date(a.data_hora) >= desde).length;
+    return { leads: leadsContatados.size, taxa, reunioes };
+  }
+
+  const clientesTotal = LEADS.filter(l => l.status === 'Cliente').length;
+
+  METAS_ATUAL.diaria = calcularPeriodo(hoje);
+  METAS_ATUAL.mensal = { ...calcularPeriodo(inicioMes), clientes: clientesTotal };
+  METAS_ATUAL.anual = { ...calcularPeriodo(inicioAno), clientes: clientesTotal };
+
+  renderMetas();
+}
 
 function loadMetas() {
   const saved = localStorage.getItem('triv_metas');
