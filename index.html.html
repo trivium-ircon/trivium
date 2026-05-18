@@ -1300,6 +1300,10 @@
               <div class="font-medium text-yellow-700">❓ Tem dúvida</div>
               <div class="text-xs text-slate-500">Pergunta preço / condições</div>
             </button>
+            <button onclick="setRespClassif('reuniao_agendada')" data-classif="reuniao_agendada" class="resp-classif-btn border border-slate-200 px-3 py-2 rounded-lg text-sm text-left hover:border-orange-400 col-span-2 bg-gradient-to-r from-orange-50 to-amber-50">
+              <div class="font-medium text-orange-700">📅 Reunião agendada! (vitória 🎉)</div>
+              <div class="text-xs text-slate-500">Lead topou conversar — preencha data/hora/modalidade abaixo</div>
+            </button>
             <button onclick="setRespClassif('objecao')" data-classif="objecao" class="resp-classif-btn border border-slate-200 px-3 py-2 rounded-lg text-sm text-left hover:border-orange-400 col-span-2">
               <div class="font-medium text-orange-700">🔄 Tem objeção (vamos contornar!)</div>
               <div class="text-xs text-slate-500">"Já tenho contador" / "tá caro" / "vou pensar" — não desiste do lead</div>
@@ -1313,6 +1317,38 @@
               <div class="text-xs text-slate-500">Sair / parar / não mandar mais</div>
             </button>
           </div>
+        </div>
+
+        <!-- Sub-painel de Reunião agendada -->
+        <div id="reuniaoPainel" class="hidden bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-lg p-4">
+          <div class="flex items-start gap-2 mb-3">
+            <i data-lucide="calendar-check" class="w-4 h-4 text-orange-600 flex-shrink-0 mt-0.5"></i>
+            <div>
+              <div class="text-sm font-semibold text-orange-900">Detalhes da reunião</div>
+              <div class="text-xs text-orange-700 mt-0.5">Preencha pra criar o compromisso e atualizar o funil</div>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-xs font-medium text-slate-700 block mb-1">Data e hora *</label>
+                <input id="reuniaoDataHora" type="datetime-local" class="w-full border border-orange-200 rounded-lg px-3 py-2 text-sm bg-white" />
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-700 block mb-1">Modalidade</label>
+                <select id="reuniaoModalidade" class="w-full border border-orange-200 rounded-lg px-3 py-2 text-sm bg-white">
+                  <option value="online">📹 Online (Meet/Zoom)</option>
+                  <option value="presencial">📍 Presencial</option>
+                  <option value="telefone">📞 Por telefone</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="text-xs font-medium text-slate-700 block mb-1">Link da reunião (opcional)</label>
+              <input id="reuniaoLink" type="url" placeholder="https://meet.google.com/..." class="w-full border border-orange-200 rounded-lg px-3 py-2 text-sm bg-white" />
+            </div>
+          </div>
+          <p class="text-xs text-orange-700 mt-3">Ao salvar, o lead vai pra coluna <strong>"Reunião"</strong> no funil e o compromisso aparece nas <strong>"Próximas reuniões"</strong> do dashboard.</p>
         </div>
 
         <!-- Sub-painel de objeções (aparece quando user clica "Tem objeção") -->
@@ -2824,6 +2860,10 @@ function openMarcarRespondeu(leadId) {
   });
   document.querySelectorAll('.objecao-btn').forEach(b => b.classList.remove('border-orange-500','bg-orange-50'));
   document.getElementById('objecaoPainel').classList.add('hidden');
+  document.getElementById('reuniaoPainel').classList.add('hidden');
+  // Limpa campos de reunião
+  ['reuniaoDataHora','reuniaoLink'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const mod = document.getElementById('reuniaoModalidade'); if (mod) mod.value = 'online';
 
   document.getElementById('respondeuModal').classList.remove('hidden');
   lucide.createIcons();
@@ -2835,19 +2875,37 @@ function setRespClassif(c) {
   respClassificacao = c;
   respObjecaoTipo = null;
   document.querySelectorAll('.resp-classif-btn').forEach(b => {
-    b.classList.remove('border-green-400','border-yellow-400','border-orange-400','border-red-400','border-slate-400','bg-slate-50');
+    b.classList.remove('border-green-400','border-yellow-400','border-orange-400','border-orange-500','border-red-400','border-slate-400','bg-slate-50','ring-2','ring-orange-400');
   });
-  const map = { interessado:'border-green-400', duvida:'border-yellow-400', objecao:'border-orange-400', nao_interessado:'border-red-400', opt_out:'border-slate-400' };
+  const map = { interessado:'border-green-400', duvida:'border-yellow-400', objecao:'border-orange-400', reuniao_agendada:'border-orange-500', nao_interessado:'border-red-400', opt_out:'border-slate-400' };
   const btn = document.querySelector(`.resp-classif-btn[data-classif="${c}"]`);
-  if (btn) { btn.classList.add(map[c], 'bg-slate-50'); }
+  if (btn) {
+    btn.classList.add(map[c]);
+    if (c === 'reuniao_agendada') btn.classList.add('ring-2','ring-orange-400');
+    else btn.classList.add('bg-slate-50');
+  }
 
-  // Mostra/esconde sub-painel de objeções
-  const painel = document.getElementById('objecaoPainel');
+  // Mostra/esconde sub-painéis
+  const objPainel = document.getElementById('objecaoPainel');
+  const reuPainel = document.getElementById('reuniaoPainel');
+
   if (c === 'objecao') {
-    painel.classList.remove('hidden');
+    objPainel.classList.remove('hidden');
+    reuPainel.classList.add('hidden');
     document.querySelectorAll('.objecao-btn').forEach(b => b.classList.remove('border-orange-500','bg-orange-50'));
+  } else if (c === 'reuniao_agendada') {
+    reuPainel.classList.remove('hidden');
+    objPainel.classList.add('hidden');
+    // Sugere data padrão: amanhã 14h
+    const dt = new Date();
+    dt.setDate(dt.getDate() + 1);
+    dt.setHours(14, 0, 0, 0);
+    const iso = dt.toISOString().slice(0, 16);
+    const inp = document.getElementById('reuniaoDataHora');
+    if (inp && !inp.value) inp.value = iso;
   } else {
-    painel.classList.add('hidden');
+    objPainel.classList.add('hidden');
+    reuPainel.classList.add('hidden');
   }
 }
 
@@ -2870,25 +2928,33 @@ async function salvarRespondeu() {
     alert('Escolha o tipo de objeção');
     return;
   }
+  // Valida campos de reunião
+  let reuniaoDataHora = null, reuniaoModalidade = 'online', reuniaoLink = null;
+  if (respClassificacao === 'reuniao_agendada') {
+    reuniaoDataHora = document.getElementById('reuniaoDataHora').value;
+    reuniaoModalidade = document.getElementById('reuniaoModalidade').value;
+    reuniaoLink = document.getElementById('reuniaoLink').value.trim() || null;
+    if (!reuniaoDataHora) { alert('Preencha a data e hora da reunião'); return; }
+  }
 
   const texto = document.getElementById('respTexto').value.trim();
   const proximo = document.getElementById('respProximo').value.trim();
   const lead = respCurrentLead;
 
   // Mapa classificação → status_funil
-  // Objeção NÃO marca como perdido, marca como respondeu
   const statusMap = {
     interessado: 'respondeu',
     duvida: 'respondeu',
     objecao: 'respondeu',
+    reuniao_agendada: 'reuniao',
     nao_interessado: 'perdido',
     opt_out: 'perdido',
   };
   const novoStatus = statusMap[respClassificacao];
 
   // Atualiza local
-  const tagMap = { respondeu:'purple', perdido:'red' };
-  const labelMap = { respondeu:'Respondeu', perdido:'Perdido' };
+  const tagMap = { respondeu:'purple', perdido:'red', reuniao:'orange' };
+  const labelMap = { respondeu:'Respondeu', perdido:'Perdido', reuniao:'Reunião' };
   lead.status = labelMap[novoStatus];
   lead.tag = tagMap[novoStatus];
   lead.last = 'agora';
@@ -2937,6 +3003,21 @@ async function salvarRespondeu() {
         });
       }
 
+      // Se foi reunião agendada, cria o compromisso na tabela appointments
+      if (respClassificacao === 'reuniao_agendada' && reuniaoDataHora) {
+        const dataIso = new Date(reuniaoDataHora).toISOString();
+        await sb.from('appointments').insert({
+          user_id: currentUser.id,
+          lead_id: lead.id,
+          data_hora: dataIso,
+          modalidade: reuniaoModalidade,
+          link_reuniao: reuniaoLink,
+          status: 'agendada',
+          observacoes: proximo || null,
+        });
+        await carregarAppointments();
+      }
+
       // Sincroniza contadores de campanha (se este lead estiver em alguma)
       await sincronizarCampanhaParaLead(lead.id, 'respondeu');
 
@@ -2963,6 +3044,7 @@ async function salvarRespondeu() {
   } else {
     // Toast com info da movimentação no funil
     const mensagensColuna = {
+      'Reunião': '🎉 Reunião agendada! Lead movido para "Reunião" — veja em Próximas reuniões',
       'Respondeu': '✓ Lead movido para "Respondeu" no Funil — fica nas Ligações pendentes',
       'Perdido': '✓ Lead movido para "Perdido" no Funil',
     };
