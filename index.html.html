@@ -80,6 +80,34 @@
 </template>
 
 <!-- ============================================ -->
+<!-- NEW PASSWORD MODAL (reset de senha)          -->
+<!-- ============================================ -->
+<div id="newPasswordModal" class="hidden fixed inset-0 bg-trivium-900 z-[70] flex items-center justify-center p-4">
+  <div class="bg-white rounded-xl max-w-md w-full p-6">
+    <div class="w-12 h-12 rounded-lg gradient-blue flex items-center justify-center mb-4">
+      <i data-lucide="key" class="w-6 h-6 text-white"></i>
+    </div>
+    <h3 class="text-xl font-bold mb-1">Definir nova senha</h3>
+    <p class="text-sm text-slate-500 mb-5">Você está redefinindo sua senha do Trivium. Escolha uma senha nova abaixo.</p>
+    <div class="space-y-3">
+      <div>
+        <label class="text-sm font-medium block mb-1">Nova senha</label>
+        <input id="newPasswordInput" type="password" minlength="6" placeholder="Mínimo 6 caracteres" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label class="text-sm font-medium block mb-1">Confirmar senha</label>
+        <input id="newPasswordConfirm" type="password" minlength="6" placeholder="Digite novamente" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+      </div>
+      <p id="newPasswordErr" class="text-sm text-red-600 hidden"></p>
+      <p id="newPasswordOk" class="text-sm text-green-600 hidden"></p>
+    </div>
+    <button onclick="updatePassword()" class="w-full mt-5 bg-trivium-blue text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-trivium-blue-dark">
+      Salvar nova senha
+    </button>
+  </div>
+</div>
+
+<!-- ============================================ -->
 <!-- CONFIG MODAL (Supabase keys)                 -->
 <!-- ============================================ -->
 <div id="configModal" class="hidden fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4">
@@ -1842,9 +1870,10 @@ async function doSignup() {
   if (!sb) { enterApp({ email, user_metadata: { nome } }); return; }
 
   btn.disabled = true; btn.textContent = 'Criando...';
+  const appUrl = window.location.origin + window.location.pathname;
   const { data, error } = await sb.auth.signUp({
     email, password: pw,
-    options: { data: { nome }, emailRedirectTo: window.location.href }
+    options: { data: { nome }, emailRedirectTo: appUrl }
   });
   btn.disabled = false; btn.textContent = 'Criar conta';
 
@@ -1870,7 +1899,8 @@ async function doRecover() {
   }
 
   btn.disabled = true; btn.textContent = 'Enviando...';
-  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+  const appUrl = window.location.origin + window.location.pathname;
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: appUrl });
   btn.disabled = false; btn.textContent = 'Enviar link';
   if (error) { errEl.textContent = traduzirErro(error.message); errEl.classList.remove('hidden'); return; }
   okEl.textContent = '✓ Link enviado para seu email!'; okEl.classList.remove('hidden');
@@ -1939,6 +1969,71 @@ async function checkExistingSession() {
   const { data } = await sb.auth.getSession();
   if (data.session) { enterApp(data.session.user); return true; }
   return false;
+}
+
+// ============== RECOVERY FLOW (link do email) ==============
+async function checkRecoveryFlow() {
+  if (!sb) return false;
+  const hash = window.location.hash || '';
+  const search = window.location.search || '';
+
+  // Caso de ERRO no link (ex: token expirado)
+  if (hash.includes('error=') || search.includes('error=')) {
+    const params = new URLSearchParams((hash || search).replace(/^#/, ''));
+    const errDesc = params.get('error_description') || 'Link inválido ou expirado.';
+    alert('⚠️ ' + decodeURIComponent(errDesc.replace(/\+/g, ' ')));
+    window.history.replaceState(null, '', window.location.pathname);
+    return false;
+  }
+
+  // Recovery (reset de senha) — link do email "esqueci senha"
+  if (hash.includes('type=recovery')) {
+    // Aguarda o Supabase processar o token no hash
+    await new Promise(r => setTimeout(r, 800));
+    // Limpa hash da URL
+    window.history.replaceState(null, '', window.location.pathname);
+    // Mostra modal de nova senha
+    document.getElementById('newPasswordModal').classList.remove('hidden');
+    lucide.createIcons();
+    return true;
+  }
+
+  // Signup confirmation — link de "confirmar email"
+  if (hash.includes('type=signup') || hash.includes('type=email_change')) {
+    await new Promise(r => setTimeout(r, 800));
+    window.history.replaceState(null, '', window.location.pathname);
+    // Tenta usar a sessão criada
+    const { data } = await sb.auth.getSession();
+    if (data.session) {
+      enterApp(data.session.user);
+      setTimeout(() => showToastInfo('✓ Email confirmado! Bem-vindo ao Trivium 🎉'), 800);
+    }
+    return true;
+  }
+
+  return false;
+}
+
+async function updatePassword() {
+  const pw = document.getElementById('newPasswordInput').value;
+  const conf = document.getElementById('newPasswordConfirm').value;
+  const errEl = document.getElementById('newPasswordErr');
+  const okEl = document.getElementById('newPasswordOk');
+  errEl.classList.add('hidden'); okEl.classList.add('hidden');
+
+  if (pw.length < 6) { errEl.textContent = 'Senha precisa ter no mínimo 6 caracteres.'; errEl.classList.remove('hidden'); return; }
+  if (pw !== conf) { errEl.textContent = 'As senhas não conferem.'; errEl.classList.remove('hidden'); return; }
+
+  const { data, error } = await sb.auth.updateUser({ password: pw });
+  if (error) { errEl.textContent = traduzirErro(error.message); errEl.classList.remove('hidden'); return; }
+
+  okEl.textContent = '✓ Senha alterada! Redirecionando...';
+  okEl.classList.remove('hidden');
+  setTimeout(() => {
+    document.getElementById('newPasswordModal').classList.add('hidden');
+    // Se já está logado pela sessão de recovery, entra direto
+    if (data?.user) enterApp(data.user);
+  }, 1500);
 }
 
 function simulateImport() {
@@ -2275,7 +2370,32 @@ function renderInbox() {
       ? `<p class="text-sm text-slate-600 mt-1 line-clamp-2">"${ultMsg.conteudo}"</p>`
       : (l.status === 'Contatado' ? `<p class="text-xs text-slate-400 mt-1 italic">Mensagem enviada · aguardando resposta...</p>` : '');
     const tempo = l.last || 'agora';
-    return `<div class="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-sm cursor-pointer transition" onclick="openMarcarRespondeu('${l.id}')">
+
+    // Calcula dias desde último contato (pra alertar follow-up vencido)
+    let alerta = '';
+    if (l.status === 'Contatado' && l._raw && l._raw.ultimo_contato) {
+      const dias = Math.floor((Date.now() - new Date(l._raw.ultimo_contato).getTime()) / 86400000);
+      if (dias >= 7) {
+        alerta = `<span class="inline-flex items-center gap-1 text-[10px] font-semibold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded"><i data-lucide="alert-circle" class="w-3 h-3"></i>Follow-up vencido há ${dias-3} dia(s)</span>`;
+      } else if (dias >= 3) {
+        alerta = `<span class="inline-flex items-center gap-1 text-[10px] font-semibold text-yellow-700 bg-yellow-50 border border-yellow-200 px-1.5 py-0.5 rounded"><i data-lucide="clock" class="w-3 h-3"></i>Hora de follow-up (${dias} dias)</span>`;
+      }
+    }
+
+    // Botão principal varia conforme status do lead
+    const acaoBtn = l.status === 'Contatado'
+      ? `<button onclick="event.stopPropagation(); openWhatsAppSend('${l.id}')" class="bg-trivium-blue text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-trivium-blue-dark inline-flex items-center gap-1.5">
+           <i data-lucide="send" class="w-3.5 h-3.5"></i>Enviar próxima mensagem
+         </button>`
+      : l.status === 'Respondeu'
+      ? `<button onclick="event.stopPropagation(); openWhatsAppSend('${l.id}')" class="bg-purple-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-purple-700 inline-flex items-center gap-1.5">
+           <i data-lucide="send" class="w-3.5 h-3.5"></i>Continuar conversa
+         </button>`
+      : `<button onclick="event.stopPropagation(); openWhatsAppSend('${l.id}')" class="bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-orange-700 inline-flex items-center gap-1.5">
+           <i data-lucide="send" class="w-3.5 h-3.5"></i>Mensagem
+         </button>`;
+
+    return `<div class="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-sm transition cursor-pointer" onclick="openMarcarRespondeu('${l.id}')">
       <div class="flex items-center justify-between mb-1">
         <span class="font-semibold text-slate-900">${l.empresa}${l.responsavel ? ' · ' + l.responsavel : ''}</span>
         <div class="flex items-center gap-2">
@@ -2284,8 +2404,17 @@ function renderInbox() {
         </div>
       </div>
       ${previewMsg}
-      <div class="flex items-center gap-2 mt-2 text-xs text-slate-500">
-        <span>${l.cidade} · ${l.seg}</span>
+      <div class="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-slate-100">
+        <div class="flex items-center gap-2 text-xs text-slate-500">
+          <span>${l.cidade} · ${l.seg}</span>
+          ${alerta}
+        </div>
+        <div class="flex items-center gap-1.5">
+          ${acaoBtn}
+          <button onclick="event.stopPropagation(); openMarcarRespondeu('${l.id}')" title="Classificar resposta" class="p-1.5 rounded-md hover:bg-purple-50 text-purple-600 hover:text-purple-700 transition">
+            <i data-lucide="message-square-reply" class="w-4 h-4"></i>
+          </button>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -4394,7 +4523,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   switchAuthTab('login');
   const hasConfig = loadSupabaseConfig();
   if (hasConfig) {
-    try { await checkExistingSession(); } catch(e) { console.warn('session check fail', e); }
+    try {
+      // Detecta flow de recovery/confirmação do email PRIMEIRO
+      const handledRecovery = await checkRecoveryFlow();
+      // Só restaura sessão normal se NÃO veio de link de email
+      if (!handledRecovery) await checkExistingSession();
+    } catch(e) { console.warn('auth init', e); }
   }
 
   // Origem buttons toggle + captura seleção
