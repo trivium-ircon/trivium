@@ -391,7 +391,7 @@
             <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
               <div>
                 <h3 class="font-semibold text-slate-900">Atividade <span id="chartPeriodLabel">dos últimos 30 dias</span></h3>
-                <p class="text-xs text-slate-500 mt-0.5">Mensagens enviadas vs respostas recebidas</p>
+                <p class="text-xs text-slate-500 mt-0.5">Conversas iniciadas vs respostas (leads únicos por dia)</p>
               </div>
               <div class="flex items-center gap-3 flex-wrap">
                 <div class="flex bg-slate-100 p-1 rounded-lg">
@@ -400,8 +400,8 @@
                   <button onclick="setChartPeriod(30)" data-chart-period="30" class="chart-period-btn px-3 py-1 rounded-md text-xs font-medium transition text-slate-500">30 dias</button>
                 </div>
                 <div class="flex gap-3 text-xs">
-                  <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-trivium-blue rounded-full"></span>Enviadas</span>
-                  <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-purple-500 rounded-full"></span>Respostas</span>
+                  <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-trivium-blue rounded-full"></span>Conversas iniciadas</span>
+                  <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-purple-500 rounded-full"></span>Responderam</span>
                 </div>
               </div>
             </div>
@@ -2521,27 +2521,30 @@ async function carregarChartData(days) {
   inicio.setDate(inicio.getDate() - (days - 1));
 
   const { data } = await sb.from('messages')
-    .select('direcao, enviada_em')
+    .select('direcao, enviada_em, lead_id')
     .gte('enviada_em', inicio.toISOString());
 
-  const enviadas = Array(days).fill(0), respostas = Array(days).fill(0);
+  // Sets de leads únicos por dia (dedup automático)
+  const enviadasSets = Array.from({length: days}, () => new Set());
+  const respostasSets = Array.from({length: days}, () => new Set());
 
   (data || []).forEach(m => {
-    // Pega o início do dia da mensagem (00:00 horário local)
+    if (!m.lead_id) return;
     const dt = new Date(m.enviada_em);
     const dtDia = new Date(dt);
     dtDia.setHours(0, 0, 0, 0);
-
-    // Diferença em DIAS DE CALENDÁRIO (não janela de 24h)
     const diffDias = Math.round((hoje.getTime() - dtDia.getTime()) / 86400000);
-
     const idx = (days - 1) - diffDias;
     if (idx < 0 || idx >= days) return;
-    if (m.direcao === 'enviada') enviadas[idx]++;
-    else if (m.direcao === 'recebida') respostas[idx]++;
+    if (m.direcao === 'enviada') enviadasSets[idx].add(m.lead_id);
+    else if (m.direcao === 'recebida') respostasSets[idx].add(m.lead_id);
   });
 
-  return { enviadas, respostas };
+  // Conta leads únicos por dia
+  return {
+    enviadas: enviadasSets.map(s => s.size),
+    respostas: respostasSets.map(s => s.size),
+  };
 }
 
 async function renderDashChart() {
@@ -2561,8 +2564,8 @@ async function renderDashChart() {
     data:{
       labels,
       datasets:[
-        { label:'Enviadas', data:enviadas, borderColor:'#2563EB', backgroundColor:'rgba(37,99,235,0.08)', fill:true, tension:0.4, pointRadius:0, borderWidth:2 },
-        { label:'Respostas', data:respostas, borderColor:'#A855F7', backgroundColor:'rgba(168,85,247,0.05)', fill:true, tension:0.4, pointRadius:0, borderWidth:2 },
+        { label:'Conversas iniciadas', data:enviadas, borderColor:'#2563EB', backgroundColor:'rgba(37,99,235,0.08)', fill:true, tension:0.4, pointRadius:0, borderWidth:2 },
+        { label:'Responderam', data:respostas, borderColor:'#A855F7', backgroundColor:'rgba(168,85,247,0.05)', fill:true, tension:0.4, pointRadius:0, borderWidth:2 },
       ]
     },
     options:{
