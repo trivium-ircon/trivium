@@ -2511,19 +2511,36 @@ function setChartPeriod(days) {
 
 async function carregarChartData(days) {
   if (!sb || !currentUser) return { enviadas: Array(days).fill(0), respostas: Array(days).fill(0) };
-  const desde = new Date();
-  desde.setDate(desde.getDate() - days);
+
+  // Início do dia HOJE (00:00:00 horário local)
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  // Início do período: days-1 dias atrás, 00:00:00
+  const inicio = new Date(hoje);
+  inicio.setDate(inicio.getDate() - (days - 1));
+
   const { data } = await sb.from('messages')
     .select('direcao, enviada_em')
-    .gte('enviada_em', desde.toISOString());
+    .gte('enviada_em', inicio.toISOString());
+
   const enviadas = Array(days).fill(0), respostas = Array(days).fill(0);
+
   (data || []).forEach(m => {
+    // Pega o início do dia da mensagem (00:00 horário local)
     const dt = new Date(m.enviada_em);
-    const idx = (days - 1) - Math.floor((Date.now() - dt.getTime()) / 86400000);
+    const dtDia = new Date(dt);
+    dtDia.setHours(0, 0, 0, 0);
+
+    // Diferença em DIAS DE CALENDÁRIO (não janela de 24h)
+    const diffDias = Math.round((hoje.getTime() - dtDia.getTime()) / 86400000);
+
+    const idx = (days - 1) - diffDias;
     if (idx < 0 || idx >= days) return;
     if (m.direcao === 'enviada') enviadas[idx]++;
     else if (m.direcao === 'recebida') respostas[idx]++;
   });
+
   return { enviadas, respostas };
 }
 
