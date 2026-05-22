@@ -258,18 +258,15 @@
       </button>
       <button onclick="goTo('leads')" data-nav="leads" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
         <i data-lucide="users" class="w-4 h-4"></i><span>Leads</span>
-        <span class="ml-auto text-xs bg-trivium-blue/20 text-trivium-blue-light px-1.5 py-0.5 rounded">2.4k</span>
       </button>
       <button onclick="goTo('kanban')" data-nav="kanban" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
         <i data-lucide="filter" class="w-4 h-4"></i><span>Funil</span>
       </button>
       <button onclick="goTo('inbox')" data-nav="inbox" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
         <i data-lucide="messages-square" class="w-4 h-4"></i><span>Conversas</span>
-        <span class="ml-auto w-2 h-2 bg-red-500 rounded-full pulse-dot"></span>
       </button>
       <button onclick="goTo('perdidos')" data-nav="perdidos" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
         <i data-lucide="x-circle" class="w-4 h-4"></i><span>Perdidos</span>
-        <span id="navPerdidosBadge" class="ml-auto text-xs bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded hidden">0</span>
       </button>
       <button onclick="goTo('metas')" data-nav="metas" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
         <i data-lucide="target" class="w-4 h-4"></i><span>Metas</span>
@@ -861,86 +858,43 @@
       <!-- ============ WHATSAPP ============ -->
       <section data-page="whatsapp" class="page hidden p-8 fade-in">
         <h1 class="text-2xl font-bold text-slate-900 mb-1">WhatsApp</h1>
-        <p class="text-slate-500 text-sm mb-8">Conecte e gerencie seus números</p>
+        <p class="text-slate-500 text-sm mb-8">Informe o número que você usa pra disparar as mensagens</p>
 
-        <div class="grid grid-cols-3 gap-6 max-w-5xl">
-          <div class="col-span-2 bg-white border border-slate-200 rounded-xl p-6">
-            <div class="flex items-center justify-between mb-5">
-              <h3 class="font-semibold text-slate-900">Sessões conectadas</h3>
-              <button class="text-sm text-trivium-blue hover:underline">+ Nova sessão</button>
-            </div>
-            <div class="space-y-3">
-              <div class="border border-slate-200 rounded-lg p-4 flex items-center gap-4">
-                <div class="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center"><i data-lucide="smartphone" class="w-6 h-6 text-green-700"></i></div>
-                <div class="flex-1">
-                  <div class="flex items-center gap-2"><span class="font-medium">WhatsApp Principal</span><span class="text-xs text-green-700 bg-green-100 px-2 py-0.5 rounded-full">Conectado</span></div>
-                  <div class="text-sm text-slate-500 mt-0.5">+55 11 99876-5432 · 87 mensagens hoje</div>
-                </div>
-                <button class="p-2 hover:bg-slate-100 rounded-lg"><i data-lucide="more-vertical" class="w-4 h-4 text-slate-500"></i></button>
+        <div class="max-w-2xl">
+          <div class="bg-white border border-slate-200 rounded-xl p-6">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="w-12 h-12 rounded-lg bg-green-50 flex items-center justify-center">
+                <i data-lucide="smartphone" class="w-6 h-6 text-green-600"></i>
               </div>
-              <div class="border border-slate-200 rounded-lg p-4 flex items-center gap-4">
-                <div class="w-12 h-12 rounded-lg bg-yellow-100 flex items-center justify-center"><i data-lucide="smartphone" class="w-6 h-6 text-yellow-700"></i></div>
-                <div class="flex-1">
-                  <div class="flex items-center gap-2"><span class="font-medium">Backup</span><span class="text-xs text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full">Aguardando QR</span></div>
-                  <div class="text-sm text-slate-500 mt-0.5">Escaneie o QR Code ao lado</div>
-                </div>
-                <button class="p-2 hover:bg-slate-100 rounded-lg"><i data-lucide="x" class="w-4 h-4 text-slate-500"></i></button>
+              <div>
+                <h3 class="font-semibold text-slate-900">Seu WhatsApp principal</h3>
+                <p class="text-xs text-slate-500">Esse número aparece como remetente quando o sistema abre o wa.me</p>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <div>
+                <label class="text-xs font-medium text-slate-700 block mb-1.5">Número (com DDD)</label>
+                <input id="waPrincipalNumero" type="tel" placeholder="(11) 98765-4321" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:border-trivium-blue focus:outline-none focus:ring-2 focus:ring-trivium-blue/10" />
+                <p class="text-xs text-slate-500 mt-1.5">Pode incluir + 55, espaços, parênteses ou só os números — o sistema formata pra você</p>
+              </div>
+
+              <div class="flex items-center justify-between pt-2">
+                <button onclick="limparWhatsAppPrincipal()" class="text-sm text-slate-500 hover:text-slate-700">Limpar</button>
+                <button onclick="salvarWhatsAppPrincipal()" class="bg-trivium-blue text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-trivium-blue-dark inline-flex items-center gap-2">
+                  <i data-lucide="check" class="w-4 h-4"></i>Salvar
+                </button>
               </div>
             </div>
 
             <div class="mt-6 pt-6 border-t border-slate-100">
-              <h4 class="font-semibold text-slate-900 mb-3 text-sm">Limites e segurança</h4>
-              <div class="grid grid-cols-3 gap-3">
-                <div class="border border-slate-200 rounded-lg p-3">
-                  <div class="text-xs text-slate-500 mb-1">Hoje</div>
-                  <div class="text-lg font-bold">87/100</div>
-                  <div class="h-1.5 bg-slate-100 rounded-full mt-2 overflow-hidden"><div class="h-full bg-trivium-blue rounded-full" style="width:87%"></div></div>
-                </div>
-                <div class="border border-slate-200 rounded-lg p-3">
-                  <div class="text-xs text-slate-500 mb-1">Intervalo</div>
-                  <div class="text-lg font-bold">30-90s</div>
-                  <div class="text-xs text-green-600 mt-2">✓ Anti-ban ativo</div>
-                </div>
-                <div class="border border-slate-200 rounded-lg p-3">
-                  <div class="text-xs text-slate-500 mb-1">Horário</div>
-                  <div class="text-lg font-bold">9-18h</div>
-                  <div class="text-xs text-slate-500 mt-2">Seg a sex</div>
+              <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm flex gap-2">
+                <i data-lucide="info" class="w-4 h-4 text-trivium-blue flex-shrink-0 mt-0.5"></i>
+                <div class="text-slate-700">
+                  <strong>Como funciona o envio:</strong> o Trivium gera um link <code class="text-xs bg-white border border-blue-200 px-1 rounded">wa.me</code> com a mensagem pronta. Você só clica e envia pelo seu WhatsApp normal — zero risco de banimento, zero custo de infraestrutura.
                 </div>
               </div>
             </div>
-          </div>
-
-          <div class="bg-white border border-slate-200 rounded-xl p-6 text-center">
-            <h3 class="font-semibold text-slate-900 mb-1">Escaneie o QR Code</h3>
-            <p class="text-xs text-slate-500 mb-4">Abra o WhatsApp do celular → Configurações → Aparelhos conectados</p>
-            <div class="bg-slate-50 rounded-xl p-4 mb-4">
-              <svg viewBox="0 0 100 100" class="w-full h-auto max-w-[200px] mx-auto" xmlns="http://www.w3.org/2000/svg">
-                <rect width="100" height="100" fill="#fff"/>
-                <g fill="#0D1321">
-                  <rect x="10" y="10" width="20" height="20"/><rect x="14" y="14" width="12" height="12" fill="#fff"/><rect x="17" y="17" width="6" height="6"/>
-                  <rect x="70" y="10" width="20" height="20"/><rect x="74" y="14" width="12" height="12" fill="#fff"/><rect x="77" y="17" width="6" height="6"/>
-                  <rect x="10" y="70" width="20" height="20"/><rect x="14" y="74" width="12" height="12" fill="#fff"/><rect x="17" y="77" width="6" height="6"/>
-                  <g>
-                    <rect x="35" y="10" width="3" height="3"/><rect x="40" y="10" width="3" height="3"/><rect x="50" y="13" width="3" height="3"/><rect x="55" y="10" width="3" height="3"/><rect x="60" y="13" width="3" height="3"/>
-                    <rect x="35" y="20" width="3" height="3"/><rect x="45" y="17" width="3" height="3"/><rect x="55" y="20" width="3" height="3"/><rect x="62" y="20" width="3" height="3"/>
-                    <rect x="40" y="25" width="3" height="3"/><rect x="50" y="25" width="3" height="3"/><rect x="60" y="25" width="3" height="3"/>
-                    <rect x="10" y="35" width="3" height="3"/><rect x="20" y="35" width="3" height="3"/><rect x="30" y="35" width="3" height="3"/><rect x="40" y="35" width="3" height="3"/><rect x="50" y="35" width="3" height="3"/><rect x="60" y="35" width="3" height="3"/><rect x="70" y="35" width="3" height="3"/><rect x="80" y="35" width="3" height="3"/>
-                    <rect x="15" y="40" width="3" height="3"/><rect x="25" y="40" width="3" height="3"/><rect x="35" y="40" width="3" height="3"/><rect x="45" y="40" width="3" height="3"/><rect x="55" y="40" width="3" height="3"/><rect x="65" y="40" width="3" height="3"/><rect x="75" y="40" width="3" height="3"/><rect x="85" y="40" width="3" height="3"/>
-                    <rect x="10" y="45" width="3" height="3"/><rect x="20" y="45" width="3" height="3"/><rect x="30" y="48" width="3" height="3"/><rect x="40" y="45" width="3" height="3"/><rect x="50" y="48" width="3" height="3"/><rect x="60" y="45" width="3" height="3"/><rect x="70" y="48" width="3" height="3"/><rect x="80" y="45" width="3" height="3"/>
-                    <rect x="15" y="50" width="3" height="3"/><rect x="35" y="53" width="3" height="3"/><rect x="55" y="50" width="3" height="3"/><rect x="75" y="53" width="3" height="3"/>
-                    <rect x="40" y="60" width="3" height="3"/><rect x="50" y="60" width="3" height="3"/><rect x="60" y="63" width="3" height="3"/><rect x="70" y="60" width="3" height="3"/><rect x="80" y="63" width="3" height="3"/>
-                    <rect x="35" y="70" width="3" height="3"/><rect x="45" y="73" width="3" height="3"/><rect x="55" y="70" width="3" height="3"/><rect x="65" y="73" width="3" height="3"/><rect x="75" y="70" width="3" height="3"/><rect x="85" y="73" width="3" height="3"/>
-                    <rect x="40" y="80" width="3" height="3"/><rect x="50" y="83" width="3" height="3"/><rect x="60" y="80" width="3" height="3"/><rect x="70" y="83" width="3" height="3"/><rect x="80" y="80" width="3" height="3"/>
-                    <rect x="35" y="90" width="3" height="3"/><rect x="45" y="90" width="3" height="3"/><rect x="55" y="93" width="3" height="3"/><rect x="65" y="90" width="3" height="3"/><rect x="75" y="93" width="3" height="3"/><rect x="85" y="90" width="3" height="3"/>
-                  </g>
-                </g>
-                <g transform="translate(40,40)">
-                  <rect width="20" height="20" fill="#fff"/>
-                  <rect x="6" y="6" width="8" height="8" fill="#2563EB"/>
-                </g>
-              </svg>
-            </div>
-            <button class="text-xs text-trivium-blue hover:underline">Atualizar QR</button>
           </div>
         </div>
       </section>
@@ -1839,6 +1793,9 @@ function goTo(page) {
   if (page === 'perdidos' && typeof openPerdidosPage === 'function') {
     openPerdidosPage();
   }
+  if (page === 'whatsapp' && typeof carregarWhatsAppPrincipal === 'function') {
+    carregarWhatsAppPrincipal();
+  }
 }
 
 // ============== SUPABASE PRODUCTION CONFIG ==============
@@ -2077,6 +2034,39 @@ async function checkExistingSession() {
   const { data } = await sb.auth.getSession();
   if (data.session) { enterApp(data.session.user); return true; }
   return false;
+}
+
+// ============== WHATSAPP PRINCIPAL (número que o usuário usa pra enviar) ==============
+function getWhatsAppPrincipalKey() {
+  return 'trivium_wa_principal_' + (currentUser?.id || 'anon');
+}
+
+function carregarWhatsAppPrincipal() {
+  const inp = document.getElementById('waPrincipalNumero');
+  if (!inp) return;
+  const saved = localStorage.getItem(getWhatsAppPrincipalKey()) || '';
+  inp.value = saved;
+}
+
+function salvarWhatsAppPrincipal() {
+  const inp = document.getElementById('waPrincipalNumero');
+  if (!inp) return;
+  const val = inp.value.trim();
+  if (!val) {
+    if (typeof showToastInfo === 'function') showToastInfo('Informe um número antes de salvar');
+    else alert('Informe um número antes de salvar');
+    return;
+  }
+  localStorage.setItem(getWhatsAppPrincipalKey(), val);
+  if (typeof showToastInfo === 'function') showToastInfo('✓ WhatsApp principal salvo');
+  else alert('WhatsApp principal salvo');
+}
+
+function limparWhatsAppPrincipal() {
+  const inp = document.getElementById('waPrincipalNumero');
+  if (inp) inp.value = '';
+  localStorage.removeItem(getWhatsAppPrincipalKey());
+  if (typeof showToastInfo === 'function') showToastInfo('Campo limpo');
 }
 
 // ============== RECOVERY FLOW (link do email) ==============
