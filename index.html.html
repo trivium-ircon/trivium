@@ -267,6 +267,10 @@
         <i data-lucide="messages-square" class="w-4 h-4"></i><span>Conversas</span>
         <span class="ml-auto w-2 h-2 bg-red-500 rounded-full pulse-dot"></span>
       </button>
+      <button onclick="goTo('perdidos')" data-nav="perdidos" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
+        <i data-lucide="x-circle" class="w-4 h-4"></i><span>Perdidos</span>
+        <span id="navPerdidosBadge" class="ml-auto text-xs bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded hidden">0</span>
+      </button>
       <button onclick="goTo('metas')" data-nav="metas" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
         <i data-lucide="target" class="w-4 h-4"></i><span>Metas</span>
       </button>
@@ -577,12 +581,85 @@
           </div>
           <div class="flex gap-2 flex-wrap" id="inboxFilters">
             <button onclick="setInboxFilter('todos')" data-filter="todos" class="inbox-filter px-3 py-2 rounded-lg text-sm border border-slate-200 bg-white text-slate-600">Todas (<span id="cntTodos">0</span>)</button>
+            <button onclick="setInboxFilter('hoje')" data-filter="hoje" class="inbox-filter px-3 py-2 rounded-lg text-sm border border-slate-200 bg-white text-slate-600">Iniciadas hoje (<span id="cntHoje">0</span>)</button>
             <button onclick="setInboxFilter('aguardando')" data-filter="aguardando" class="inbox-filter px-3 py-2 rounded-lg text-sm border border-slate-200 bg-white text-slate-600">Aguardando resposta (<span id="cntAguardando">0</span>)</button>
             <button onclick="setInboxFilter('responderam')" data-filter="responderam" class="inbox-filter px-3 py-2 rounded-lg text-sm border border-slate-200 bg-white text-slate-600">Responderam (<span id="cntResponderam">0</span>)</button>
             <button onclick="setInboxFilter('reuniao')" data-filter="reuniao" class="inbox-filter px-3 py-2 rounded-lg text-sm border border-slate-200 bg-white text-slate-600">Em reunião (<span id="cntReuniao">0</span>)</button>
           </div>
         </div>
+        <!-- Barra de busca da Conversas -->
+        <div class="bg-white border border-slate-200 rounded-xl p-3 mb-3">
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input id="inboxSearch" oninput="renderInbox()" placeholder="Buscar por nome do lead, empresa, cidade ou telefone..." class="w-full border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:border-trivium-blue focus:outline-none focus:ring-2 focus:ring-trivium-blue/10" />
+          </div>
+        </div>
         <div id="inboxList" class="space-y-2"></div>
+      </section>
+
+      <!-- ============ PERDIDOS (remarketing) ============ -->
+      <section data-page="perdidos" class="page hidden p-8 fade-in">
+        <div class="flex items-end justify-between mb-6">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900">Leads perdidos</h1>
+            <p class="text-slate-500 text-sm mt-1" id="perdidosPageSubtitle">Lista completa de leads que disseram "não" — ótimos pra remarketing daqui a uns meses</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="openPerdidosModal()" class="border border-slate-200 px-3 py-2 rounded-lg text-sm hover:bg-slate-50 flex items-center gap-1.5">
+              <i data-lucide="bar-chart-3" class="w-4 h-4"></i>Ver motivos
+            </button>
+          </div>
+        </div>
+
+        <!-- Quadro-resumo -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+          <div class="bg-white border border-slate-200 rounded-xl p-4">
+            <div class="text-xs text-slate-500">Total perdidos</div>
+            <div class="text-2xl font-bold text-red-600 mt-1" id="perdidosTotalCount">0</div>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4">
+            <div class="text-xs text-slate-500">Objeções</div>
+            <div class="text-2xl font-bold text-orange-600 mt-1" id="perdidosObjecoesCount">0</div>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4">
+            <div class="text-xs text-slate-500">Sem interesse</div>
+            <div class="text-2xl font-bold text-red-500 mt-1" id="perdidosSemInteresseCount">0</div>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4">
+            <div class="text-xs text-slate-500">Pediram pra parar</div>
+            <div class="text-2xl font-bold text-slate-600 mt-1" id="perdidosOptOutCount">0</div>
+          </div>
+        </div>
+
+        <!-- Filtros + busca -->
+        <div class="bg-white border border-slate-200 rounded-xl p-3 mb-3 flex items-center gap-3 flex-wrap">
+          <div class="relative flex-1 min-w-[240px]">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input id="perdidosSearch" oninput="renderPerdidosPage()" placeholder="Buscar empresa, responsável, cidade ou telefone..." class="w-full border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:border-trivium-blue focus:outline-none focus:ring-2 focus:ring-trivium-blue/10" />
+          </div>
+          <select id="perdidosFiltroMotivo" onchange="renderPerdidosPage()" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+            <option value="">Todos os motivos</option>
+            <option value="objecao_contador">Já tinha contador</option>
+            <option value="objecao_preco">Achou caro</option>
+            <option value="objecao_pensar">Disse que ia pensar</option>
+            <option value="objecao_interna">Resolve internamente</option>
+            <option value="objecao_urgencia">Não precisa agora</option>
+            <option value="objecao_outras">Outras objeções</option>
+            <option value="nao_interessado">Sem interesse direto</option>
+            <option value="opt_out">Pediu pra parar</option>
+            <option value="sem_classificacao">Sem classificação</option>
+          </select>
+        </div>
+
+        <!-- Lista -->
+        <div id="perdidosList" class="space-y-2"></div>
+
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4 text-sm flex gap-2">
+          <i data-lucide="lightbulb" class="w-4 h-4 text-trivium-blue flex-shrink-0 mt-0.5"></i>
+          <div>
+            <strong>Dica de remarketing:</strong> leads que disseram "vou pensar" ou "não preciso agora" costumam converter 3-6 meses depois com uma abordagem nova. Use o botão <em>Reativar</em> pra trazê-los pro funil.
+          </div>
+        </div>
       </section>
 
       <!-- ============ METAS ============ -->
@@ -1344,6 +1421,32 @@
               <div class="font-medium text-slate-700">🚫 Pediu pra parar</div>
               <div class="text-xs text-slate-500">Sair / parar / não mandar mais</div>
             </button>
+            <button onclick="setRespClassif('stand_by')" data-classif="stand_by" class="resp-classif-btn border border-slate-200 px-3 py-2 rounded-lg text-sm text-left hover:border-blue-400 col-span-2 bg-gradient-to-r from-blue-50 to-cyan-50">
+              <div class="font-medium text-blue-700">⏳ Aguardar retorno (Stand by)</div>
+              <div class="text-xs text-slate-500">Pediu pra contatar depois — defina a data abaixo e o sistema te avisa</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Sub-painel Stand by (aguardar retorno em data específica) -->
+        <div id="standbyPainel" class="hidden bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-4">
+          <div class="flex items-start gap-2 mb-3">
+            <i data-lucide="clock-4" class="w-4 h-4 text-trivium-blue flex-shrink-0 mt-0.5"></i>
+            <div>
+              <div class="text-sm font-semibold text-blue-900">Quando retornar pra esse lead?</div>
+              <div class="text-xs text-blue-700 mt-0.5">No dia escolhido, você receberá um aviso no Trivium (no sino de notificações)</div>
+            </div>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-slate-700 block mb-1">Data de retorno *</label>
+            <input id="standbyData" type="date" class="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm bg-white" />
+            <div class="flex gap-1.5 mt-2 flex-wrap">
+              <button type="button" onclick="setStandbyData(7)" class="text-xs border border-blue-200 bg-white px-2 py-1 rounded hover:bg-blue-50">+ 7 dias</button>
+              <button type="button" onclick="setStandbyData(15)" class="text-xs border border-blue-200 bg-white px-2 py-1 rounded hover:bg-blue-50">+ 15 dias</button>
+              <button type="button" onclick="setStandbyData(30)" class="text-xs border border-blue-200 bg-white px-2 py-1 rounded hover:bg-blue-50">+ 30 dias (1 mês)</button>
+              <button type="button" onclick="setStandbyData(60)" class="text-xs border border-blue-200 bg-white px-2 py-1 rounded hover:bg-blue-50">+ 60 dias</button>
+              <button type="button" onclick="setStandbyData(90)" class="text-xs border border-blue-200 bg-white px-2 py-1 rounded hover:bg-blue-50">+ 90 dias (3 meses)</button>
+            </div>
           </div>
         </div>
 
@@ -1731,6 +1834,11 @@ function goTo(page) {
     navBtn.classList.remove('text-slate-300');
   }
   document.querySelector('main').scrollTop = 0;
+
+  // Carregamento sob demanda por página
+  if (page === 'perdidos' && typeof openPerdidosPage === 'function') {
+    openPerdidosPage();
+  }
 }
 
 // ============== SUPABASE PRODUCTION CONFIG ==============
@@ -2312,12 +2420,23 @@ function renderInbox() {
     l.status === 'Contatado' || l.status === 'Respondeu' || l.status === 'Reunião'
   );
 
+  // Conjunto de lead_ids contatados HOJE (via mensagens enviadas hoje)
+  const hojeDt = new Date(); hojeDt.setHours(0,0,0,0);
+  const leadsHojeSet = new Set();
+  (MESSAGES_RECENTES || []).forEach(m => {
+    if (m.direcao !== 'enviada' || !m.lead_id) return;
+    const dt = new Date(m.enviada_em); dt.setHours(0,0,0,0);
+    if (dt.getTime() === hojeDt.getTime()) leadsHojeSet.add(m.lead_id);
+  });
+
   // Atualiza contadores dos filtros (sempre baseado no total geral)
   const cntTotal = conversas.length;
   const cntAguard = conversas.filter(l => l.status === 'Contatado').length;
   const cntResp = conversas.filter(l => l.status === 'Respondeu').length;
   const cntReun = conversas.filter(l => l.status === 'Reunião').length;
+  const cntHojeVal = conversas.filter(l => leadsHojeSet.has(l.id)).length;
   setText('cntTodos', cntTotal);
+  setText('cntHoje', cntHojeVal);
   setText('cntAguardando', cntAguard);
   setText('cntResponderam', cntResp);
   setText('cntReuniao', cntReun);
@@ -2326,6 +2445,20 @@ function renderInbox() {
   if (inboxFilter === 'aguardando') conversas = conversas.filter(l => l.status === 'Contatado');
   else if (inboxFilter === 'responderam') conversas = conversas.filter(l => l.status === 'Respondeu');
   else if (inboxFilter === 'reuniao') conversas = conversas.filter(l => l.status === 'Reunião');
+  else if (inboxFilter === 'hoje') conversas = conversas.filter(l => leadsHojeSet.has(l.id));
+
+  // Aplica busca textual (empresa, responsável, cidade, telefone)
+  const searchEl = document.getElementById('inboxSearch');
+  const q = searchEl ? searchEl.value.trim().toLowerCase() : '';
+  if (q) {
+    conversas = conversas.filter(l => {
+      const empresa = (l.empresa || '').toLowerCase();
+      const resp = (l.responsavel || '').toLowerCase();
+      const cidade = (l.cidade || '').toLowerCase();
+      const tel = ((l._raw && (l._raw.telefone_original || l._raw.telefone)) || '').toLowerCase();
+      return empresa.includes(q) || resp.includes(q) || cidade.includes(q) || tel.includes(q);
+    });
+  }
 
   // Ordena por último contato (mais recente primeiro)
   conversas.sort((a, b) => {
@@ -2337,11 +2470,12 @@ function renderInbox() {
   if (conversas.length === 0) {
     const msgs = {
       'todos': { titulo: 'Nenhuma conversa em andamento', sub: 'Quando você enviar a primeira mensagem para um lead, ele aparece aqui' },
+      'hoje': { titulo: 'Nenhuma conversa iniciada hoje', sub: 'Leads que você contatou hoje aparecem aqui' },
       'aguardando': { titulo: 'Ninguém aguardando resposta', sub: 'Leads contatados que ainda não responderam aparecem aqui' },
       'responderam': { titulo: 'Nenhum lead respondeu', sub: 'Quando classificar uma resposta de lead, aparece aqui' },
       'reuniao': { titulo: 'Nenhuma reunião marcada', sub: 'Leads movidos para "Reunião" no funil aparecem aqui' },
     };
-    const m = msgs[inboxFilter] || msgs.todos;
+    const m = q ? { titulo: 'Nenhum resultado pra essa busca', sub: 'Tente ajustar o filtro acima ou limpar a busca' } : (msgs[inboxFilter] || msgs.todos);
     list.innerHTML = `<div class="bg-white border border-slate-200 rounded-xl p-12 text-center">
       <i data-lucide="messages-square" class="w-12 h-12 mx-auto text-slate-300 mb-3"></i>
       <p class="text-slate-500 font-medium mb-1">${m.titulo}</p>
@@ -2379,6 +2513,16 @@ function renderInbox() {
         alerta = `<span class="inline-flex items-center gap-1 text-[10px] font-semibold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded"><i data-lucide="alert-circle" class="w-3 h-3"></i>Follow-up vencido há ${dias-3} dia(s)</span>`;
       } else if (dias >= 3) {
         alerta = `<span class="inline-flex items-center gap-1 text-[10px] font-semibold text-yellow-700 bg-yellow-50 border border-yellow-200 px-1.5 py-0.5 rounded"><i data-lucide="clock" class="w-3 h-3"></i>Hora de follow-up (${dias} dias)</span>`;
+      }
+    }
+    // Tag de Stand by (lead aguardando data de retorno)
+    if (l._raw && l._raw.proximo_contato) {
+      const px = new Date(l._raw.proximo_contato); px.setHours(0,0,0,0);
+      const hojeStr = new Date(); hojeStr.setHours(0,0,0,0);
+      if (px.getTime() <= hojeStr.getTime()) {
+        alerta += ` <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded"><i data-lucide="clock-4" class="w-3 h-3"></i>Hora de retornar!</span>`;
+      } else {
+        alerta += ` <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded"><i data-lucide="clock-4" class="w-3 h-3"></i>Stand by até ${px.toLocaleDateString('pt-BR')}</span>`;
       }
     }
 
@@ -2424,6 +2568,152 @@ function renderInbox() {
 // Atualiza só os contadores dos filtros (chamado pelo renderDashboard original)
 function renderInboxCounts() {
   // O renderInbox já cuida disso. Mantém função pra compatibilidade.
+}
+
+// ============== PÁGINA DE LEADS PERDIDOS (remarketing) ==============
+// Cache do último motivo (classificacao_ia) por lead — populado quando a página é aberta
+let PERDIDOS_MOTIVOS_CACHE = {};
+
+async function carregarMotivosPerdidos() {
+  PERDIDOS_MOTIVOS_CACHE = {};
+  if (!sb || !currentUser) return;
+  const perdidosIds = LEADS.filter(l => l.status === 'Perdido' && !String(l.id).startsWith('demo-')).map(l => l.id);
+  if (perdidosIds.length === 0) return;
+  const { data } = await sb.from('messages')
+    .select('lead_id, classificacao_ia, enviada_em')
+    .eq('user_id', currentUser.id)
+    .in('lead_id', perdidosIds)
+    .not('classificacao_ia', 'is', null)
+    .order('enviada_em', { ascending: false });
+  (data || []).forEach(m => {
+    if (!PERDIDOS_MOTIVOS_CACHE[m.lead_id]) PERDIDOS_MOTIVOS_CACHE[m.lead_id] = m.classificacao_ia;
+  });
+}
+
+async function openPerdidosPage() {
+  await carregarMotivosPerdidos();
+  renderPerdidosPage();
+}
+
+function renderPerdidosPage() {
+  const list = document.getElementById('perdidosList');
+  if (!list) return;
+  let perdidos = LEADS.filter(l => l.status === 'Perdido');
+
+  // Totais (sempre considera o universo todo)
+  const totalPerdidos = perdidos.length;
+  let countObjecoes = 0, countSemInteresse = 0, countOptOut = 0;
+  perdidos.forEach(l => {
+    const m = PERDIDOS_MOTIVOS_CACHE[l.id];
+    if (m && m.startsWith('objecao_')) countObjecoes++;
+    else if (m === 'nao_interessado') countSemInteresse++;
+    else if (m === 'opt_out') countOptOut++;
+  });
+  setText('perdidosTotalCount', totalPerdidos);
+  setText('perdidosObjecoesCount', countObjecoes);
+  setText('perdidosSemInteresseCount', countSemInteresse);
+  setText('perdidosOptOutCount', countOptOut);
+
+  // Badge na sidebar
+  const navBadge = document.getElementById('navPerdidosBadge');
+  if (navBadge) {
+    if (totalPerdidos > 0) { navBadge.classList.remove('hidden'); navBadge.textContent = totalPerdidos; }
+    else navBadge.classList.add('hidden');
+  }
+
+  // Filtros
+  const filtroMotivo = document.getElementById('perdidosFiltroMotivo')?.value || '';
+  const q = (document.getElementById('perdidosSearch')?.value || '').trim().toLowerCase();
+
+  if (filtroMotivo) {
+    perdidos = perdidos.filter(l => {
+      const m = PERDIDOS_MOTIVOS_CACHE[l.id] || 'sem_classificacao';
+      return m === filtroMotivo;
+    });
+  }
+  if (q) {
+    perdidos = perdidos.filter(l => {
+      const empresa = (l.empresa || '').toLowerCase();
+      const resp = (l.responsavel || '').toLowerCase();
+      const cidade = (l.cidade || '').toLowerCase();
+      const tel = ((l._raw && (l._raw.telefone_original || l._raw.telefone)) || '').toLowerCase();
+      return empresa.includes(q) || resp.includes(q) || cidade.includes(q) || tel.includes(q);
+    });
+  }
+
+  // Ordena pelo perdido mais recente (último contato desc)
+  perdidos.sort((a, b) => {
+    const aDt = (a._raw && a._raw.ultimo_contato) || (a._raw && a._raw.created_at) || 0;
+    const bDt = (b._raw && b._raw.ultimo_contato) || (b._raw && b._raw.created_at) || 0;
+    return new Date(bDt) - new Date(aDt);
+  });
+
+  if (perdidos.length === 0) {
+    list.innerHTML = `<div class="bg-white border border-slate-200 rounded-xl p-12 text-center">
+      <i data-lucide="${totalPerdidos === 0 ? 'sparkles' : 'search'}" class="w-12 h-12 mx-auto text-slate-300 mb-3"></i>
+      <p class="text-slate-500 font-medium mb-1">${totalPerdidos === 0 ? 'Nenhum lead perdido ainda' : 'Nenhum resultado para esse filtro'}</p>
+      <p class="text-xs text-slate-400">${totalPerdidos === 0 ? 'Ótimo sinal — siga prospectando!' : 'Tente outro motivo ou limpe a busca'}</p>
+    </div>`;
+    lucide.createIcons();
+    return;
+  }
+
+  list.innerHTML = perdidos.map(l => {
+    const motivo = PERDIDOS_MOTIVOS_CACHE[l.id] || 'sem_classificacao';
+    const m = MOTIVO_LABELS[motivo] || { label: 'Sem classificação', color: 'slate' };
+    const corBg = m.color === 'orange' ? 'bg-orange-100 text-orange-700' : (m.color === 'red' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700');
+    const tel = (l._raw && (l._raw.telefone_original || l._raw.telefone)) || '';
+    const dtUlt = (l._raw && l._raw.ultimo_contato) ? new Date(l._raw.ultimo_contato).toLocaleDateString('pt-BR') : '—';
+
+    return `<div class="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-sm transition">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap mb-1">
+            <span class="font-semibold text-slate-900">${l.empresa}${l.responsavel ? ' · ' + l.responsavel : ''}</span>
+            <span class="text-[10px] font-semibold uppercase tracking-wide ${corBg} px-2 py-0.5 rounded">${m.label}</span>
+          </div>
+          <div class="flex items-center gap-3 text-xs text-slate-500 flex-wrap">
+            ${tel ? `<span class="inline-flex items-center gap-1"><i data-lucide="phone" class="w-3 h-3"></i>${tel}</span>` : ''}
+            ${l.cidade ? `<span class="inline-flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3"></i>${l.cidade}</span>` : ''}
+            ${l.seg && l.seg !== '—' ? `<span class="inline-flex items-center gap-1"><i data-lucide="briefcase" class="w-3 h-3"></i>${l.seg}</span>` : ''}
+            <span class="inline-flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i>Perdido em ${dtUlt}</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+          <button onclick="reativarLead('${l.id}')" title="Trazer este lead de volta pro funil (Novo)" class="bg-trivium-blue text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-trivium-blue-dark inline-flex items-center gap-1.5">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>Reativar
+          </button>
+          <button onclick="openWhatsAppSend('${l.id}')" title="Enviar mensagem de remarketing" class="border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-green-50 hover:border-green-300 hover:text-green-700 inline-flex items-center gap-1.5">
+            <i data-lucide="send" class="w-3.5 h-3.5"></i>Mensagem
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  lucide.createIcons();
+}
+
+async function reativarLead(leadId) {
+  if (!leadId) return;
+  const lead = LEADS.find(l => l.id === leadId);
+  if (!lead) return;
+  if (!confirm(`Trazer "${lead.empresa}" de volta pro funil como "Novo"? Você poderá refazer a abordagem.`)) return;
+
+  if (sb && currentUser && !String(leadId).startsWith('demo-')) {
+    const { error } = await sb.from('leads').update({
+      status_funil: 'novo',
+      ultimo_contato: new Date().toISOString(),
+    }).eq('id', leadId);
+    if (error) { showToastInfo('Erro ao reativar: ' + error.message); return; }
+    await carregarLeads();
+  } else {
+    lead.status = 'Novo'; lead.tag = 'slate';
+  }
+  renderPerdidosPage();
+  renderLeadsTable();
+  renderKanban();
+  renderDashboard();
+  showToastInfo('✓ Lead reativado — agora está em "Novo" no funil');
 }
 
 function renderCampanhas() {
@@ -3010,6 +3300,9 @@ function openMarcarRespondeu(leadId) {
   document.querySelectorAll('.objecao-btn').forEach(b => b.classList.remove('border-orange-500','bg-orange-50'));
   document.getElementById('objecaoPainel').classList.add('hidden');
   document.getElementById('reuniaoPainel').classList.add('hidden');
+  const sbPainel = document.getElementById('standbyPainel');
+  if (sbPainel) sbPainel.classList.add('hidden');
+  const sbData = document.getElementById('standbyData'); if (sbData) sbData.value = '';
   // Limpa campos de reunião
   ['reuniaoDataHora','reuniaoLink'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   const mod = document.getElementById('reuniaoModalidade'); if (mod) mod.value = 'online';
@@ -3026,25 +3319,29 @@ function setRespClassif(c) {
   document.querySelectorAll('.resp-classif-btn').forEach(b => {
     b.classList.remove('border-green-400','border-yellow-400','border-orange-400','border-orange-500','border-red-400','border-slate-400','bg-slate-50','ring-2','ring-orange-400');
   });
-  const map = { interessado:'border-green-400', duvida:'border-yellow-400', objecao:'border-orange-400', reuniao_agendada:'border-orange-500', nao_interessado:'border-red-400', opt_out:'border-slate-400' };
+  const map = { interessado:'border-green-400', duvida:'border-yellow-400', objecao:'border-orange-400', reuniao_agendada:'border-orange-500', nao_interessado:'border-red-400', opt_out:'border-slate-400', stand_by:'border-blue-400' };
   const btn = document.querySelector(`.resp-classif-btn[data-classif="${c}"]`);
   if (btn) {
     btn.classList.add(map[c]);
     if (c === 'reuniao_agendada') btn.classList.add('ring-2','ring-orange-400');
+    else if (c === 'stand_by') btn.classList.add('ring-2','ring-blue-400');
     else btn.classList.add('bg-slate-50');
   }
 
   // Mostra/esconde sub-painéis
   const objPainel = document.getElementById('objecaoPainel');
   const reuPainel = document.getElementById('reuniaoPainel');
+  const sbPainel = document.getElementById('standbyPainel');
 
   if (c === 'objecao') {
     objPainel.classList.remove('hidden');
     reuPainel.classList.add('hidden');
+    if (sbPainel) sbPainel.classList.add('hidden');
     document.querySelectorAll('.objecao-btn').forEach(b => b.classList.remove('border-orange-500','bg-orange-50'));
   } else if (c === 'reuniao_agendada') {
     reuPainel.classList.remove('hidden');
     objPainel.classList.add('hidden');
+    if (sbPainel) sbPainel.classList.add('hidden');
     // Sugere data padrão: amanhã 14h
     const dt = new Date();
     dt.setDate(dt.getDate() + 1);
@@ -3052,10 +3349,28 @@ function setRespClassif(c) {
     const iso = dt.toISOString().slice(0, 16);
     const inp = document.getElementById('reuniaoDataHora');
     if (inp && !inp.value) inp.value = iso;
+  } else if (c === 'stand_by') {
+    if (sbPainel) sbPainel.classList.remove('hidden');
+    objPainel.classList.add('hidden');
+    reuPainel.classList.add('hidden');
+    // Sugere data padrão: +30 dias
+    setStandbyData(30);
   } else {
     objPainel.classList.add('hidden');
     reuPainel.classList.add('hidden');
+    if (sbPainel) sbPainel.classList.add('hidden');
   }
+}
+
+// Define data de retorno (stand by) somando N dias a partir de hoje
+function setStandbyData(diasFuturo) {
+  const dt = new Date();
+  dt.setDate(dt.getDate() + diasFuturo);
+  const yyyy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getDate()).padStart(2, '0');
+  const inp = document.getElementById('standbyData');
+  if (inp) inp.value = `${yyyy}-${mm}-${dd}`;
 }
 
 function setObjecaoTipo(t) {
@@ -3085,12 +3400,23 @@ async function salvarRespondeu() {
     reuniaoLink = document.getElementById('reuniaoLink').value.trim() || null;
     if (!reuniaoDataHora) { alert('Preencha a data e hora da reunião'); return; }
   }
+  // Valida data de stand by
+  let standbyDataStr = null, standbyIso = null;
+  if (respClassificacao === 'stand_by') {
+    standbyDataStr = document.getElementById('standbyData')?.value || '';
+    if (!standbyDataStr) { alert('Escolha a data de retorno do lead'); return; }
+    // Salva como timestamp na meia-noite local do dia escolhido
+    const [yy, mm, dd] = standbyDataStr.split('-').map(n => parseInt(n, 10));
+    const dt = new Date(yy, mm - 1, dd, 8, 0, 0, 0); // 8h da manhã
+    standbyIso = dt.toISOString();
+  }
 
   const texto = document.getElementById('respTexto').value.trim();
   const proximo = document.getElementById('respProximo').value.trim();
   const lead = respCurrentLead;
 
   // Mapa classificação → status_funil
+  // Stand by mantém o lead em "respondeu" (continua no funil ativo), mas marca proximo_contato
   const statusMap = {
     interessado: 'respondeu',
     duvida: 'respondeu',
@@ -3098,6 +3424,7 @@ async function salvarRespondeu() {
     reuniao_agendada: 'reuniao',
     nao_interessado: 'perdido',
     opt_out: 'perdido',
+    stand_by: 'respondeu',
   };
   const novoStatus = statusMap[respClassificacao];
 
@@ -3116,6 +3443,10 @@ async function salvarRespondeu() {
     if (respClassificacao === 'objecao') {
       partes.push(`[${new Date().toLocaleDateString('pt-BR')}] Objeção: ${respObjecaoTipo}`);
     }
+    if (respClassificacao === 'stand_by' && standbyDataStr) {
+      const dtFmt = new Date(standbyIso).toLocaleDateString('pt-BR');
+      partes.push(`[${new Date().toLocaleDateString('pt-BR')}] Stand by — retornar em ${dtFmt}`);
+    }
     if (proximo) partes.push(`[${new Date().toLocaleDateString('pt-BR')}] Próximo passo: ${proximo}`);
     if (partes.length > 0) {
       observacoesNova = partes.join('\n') + (obsAtual ? '\n' + obsAtual : '');
@@ -3124,22 +3455,55 @@ async function salvarRespondeu() {
     }
 
     try {
-      await sb.from('leads').update({
+      // Monta payload da atualização
+      const updPayload = {
         status_funil: novoStatus,
         ultimo_contato: new Date().toISOString(),
         observacoes: observacoesNova,
-      }).eq('id', lead.id);
+      };
+      if (respClassificacao === 'stand_by') {
+        updPayload.proximo_contato = standbyIso;
+      } else if (['interessado','duvida','objecao','reuniao_agendada','nao_interessado','opt_out'].includes(respClassificacao)) {
+        // Limpa proximo_contato se a classificação mudar pra outra coisa
+        updPayload.proximo_contato = null;
+      }
+      await sb.from('leads').update(updPayload).eq('id', lead.id);
 
       // Atualiza local com nova observação
-      if (lead._raw) lead._raw.observacoes = observacoesNova;
+      if (lead._raw) {
+        lead._raw.observacoes = observacoesNova;
+        if (respClassificacao === 'stand_by') lead._raw.proximo_contato = standbyIso;
+        else if (updPayload.proximo_contato === null) lead._raw.proximo_contato = null;
+      }
 
-      if (texto) {
+      // Insere mensagem recebida sempre que o lead respondeu — mesmo sem texto colado,
+      // pra que reuniões agendadas / interessados / objeções / standby contem como resposta no chart e métricas.
+      // Pula apenas opt_out (lead pediu pra parar — não é resposta produtiva)
+      if (respClassificacao !== 'opt_out') {
+        const labelClassif = {
+          interessado: '[Resposta: interessado]',
+          duvida: '[Resposta: tem dúvida]',
+          objecao: `[Resposta: objeção · ${respObjecaoTipo || 'outras'}]`,
+          reuniao_agendada: '[Resposta: reunião agendada]',
+          nao_interessado: '[Resposta: sem interesse]',
+          stand_by: '[Resposta: aguardar retorno]',
+        };
+        const conteudoMsg = texto || labelClassif[respClassificacao] || '[Resposta registrada]';
+        await sb.from('messages').insert({
+          user_id: currentUser.id,
+          lead_id: lead.id,
+          direcao: 'recebida',
+          conteudo: conteudoMsg,
+          classificacao_ia: respClassificacao === 'objecao' ? `objecao_${respObjecaoTipo}` : respClassificacao,
+        });
+      } else if (texto) {
+        // Opt-out com texto colado: ainda registra a mensagem pra histórico, mas marca como opt_out
         await sb.from('messages').insert({
           user_id: currentUser.id,
           lead_id: lead.id,
           direcao: 'recebida',
           conteudo: texto,
-          classificacao_ia: respClassificacao === 'objecao' ? `objecao_${respObjecaoTipo}` : respClassificacao,
+          classificacao_ia: 'opt_out',
         });
       }
 
@@ -3190,6 +3554,9 @@ async function salvarRespondeu() {
     setTimeout(() => {
       openWhatsAppSend(lead.id, tipoTpl);
     }, 600);
+  } else if (respClassificacao === 'stand_by' && standbyIso) {
+    const dtFmt = new Date(standbyIso).toLocaleDateString('pt-BR');
+    showToastInfo(`⏳ Lead em stand by — você receberá um aviso em ${dtFmt}`);
   } else {
     // Toast com info da movimentação no funil
     const mensagensColuna = {
@@ -3510,6 +3877,14 @@ function renderDashboard() {
   renderInboxCounts();
   renderDashChart();
   renderNotificacoes();
+
+  // Atualiza badge "Perdidos" da sidebar
+  const navBadge = document.getElementById('navPerdidosBadge');
+  if (navBadge) {
+    const perd = LEADS.filter(l => l.status === 'Perdido').length;
+    if (perd > 0) { navBadge.classList.remove('hidden'); navBadge.textContent = perd; }
+    else navBadge.classList.add('hidden');
+  }
 }
 
 function renderInboxCounts() {
@@ -3573,6 +3948,24 @@ function calcularPendencias() {
     }
   });
 
+  // Stand by — leads cujo proximo_contato venceu (data <= hoje)
+  LEADS.forEach(l => {
+    const px = l._raw && l._raw.proximo_contato;
+    if (!px) return;
+    const dt = new Date(px); dt.setHours(0,0,0,0);
+    const hojeZero = new Date(hoje); hojeZero.setHours(0,0,0,0);
+    if (dt.getTime() <= hojeZero.getTime()) {
+      pendencias.push({
+        tipo:'standby', icone:'clock-4', cor:'blue',
+        titulo: `⏰ Retornar contato: ${l.responsavel || l.empresa}`,
+        detalhe: dt.getTime() === hojeZero.getTime()
+          ? `Hoje é o dia de retornar pra esse lead`
+          : `Era pra ter retornado em ${dt.toLocaleDateString('pt-BR')} — está atrasado`,
+        leadId: l.id,
+      });
+    }
+  });
+
   return pendencias;
 }
 
@@ -3601,7 +3994,7 @@ function abrirNotificacoes() {
   } else {
     const corMap = { yellow:'bg-yellow-50 text-yellow-700', blue:'bg-blue-50 text-trivium-blue', orange:'bg-orange-50 text-orange-600' };
     list.innerHTML = pendencias.map(p => `
-      <button onclick="document.getElementById('notifPanel').classList.add('hidden'); ${p.tipo === 'reuniao' ? 'openReunioesModal()' : `openWhatsAppSend('${p.leadId}')`}" class="w-full text-left p-4 hover:bg-slate-50 transition flex items-start gap-3">
+      <button onclick="document.getElementById('notifPanel').classList.add('hidden'); ${p.tipo === 'reuniao' ? 'openReunioesModal()' : (p.tipo === 'standby' ? `openWhatsAppSend('${p.leadId}')` : `openWhatsAppSend('${p.leadId}')`)}" class="w-full text-left p-4 hover:bg-slate-50 transition flex items-start gap-3">
         <div class="w-9 h-9 rounded-lg ${corMap[p.cor]} flex items-center justify-center flex-shrink-0">
           <i data-lucide="${p.icone}" class="w-4 h-4"></i>
         </div>
@@ -3709,10 +4102,15 @@ function renderProximasReunioes() {
     const dt = new Date(a.data_hora);
     const data = dt.toLocaleDateString('pt-BR', { weekday:'short', day:'2-digit', month:'2-digit' });
     const hora = dt.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
-    return `<div class="p-4 hover:bg-slate-50">
+    return `<div class="p-4 hover:bg-slate-50 group">
       <div class="flex items-center justify-between mb-1.5">
         <span class="font-medium text-sm">${empresa}</span>
-        <span class="text-xs font-semibold text-trivium-blue">${data}, ${hora}</span>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-semibold text-trivium-blue">${data}, ${hora}</span>
+          <button onclick="excluirReuniao('${a.id}')" title="Excluir reunião" class="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50 text-red-500 hover:text-red-700 transition">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
       </div>
       <div class="flex items-center gap-2 text-xs text-slate-500">
         <i data-lucide="${iconMap[a.modalidade] || 'video'}" class="w-3 h-3"></i>${a.modalidade || 'online'}${a.observacoes ? ' · ' + a.observacoes : ''}
@@ -3720,6 +4118,32 @@ function renderProximasReunioes() {
     </div>`;
   }).join('');
   lucide.createIcons();
+}
+
+// ============== EXCLUIR REUNIÃO ==============
+async function excluirReuniao(apptId) {
+  if (!apptId) return;
+  if (!confirm('Excluir esta reunião? O lead continua no funil — só o agendamento será removido.')) return;
+
+  if (sb && currentUser) {
+    const { error } = await sb.from('appointments').delete().eq('id', apptId);
+    if (error) {
+      console.error('excluirReuniao', error);
+      showToastInfo('Erro ao excluir: ' + error.message);
+      return;
+    }
+    await carregarAppointments();
+  } else {
+    APPOINTMENTS_REAIS = APPOINTMENTS_REAIS.filter(a => a.id !== apptId);
+  }
+
+  // Re-renderiza tudo que depende de reuniões
+  renderProximasReunioes();
+  renderDashboard();
+  // Se o modal de reuniões estiver aberto, atualiza ele
+  const modal = document.getElementById('reunioesModal');
+  if (modal && !modal.classList.contains('hidden')) openReunioesModal();
+  showToastInfo('✓ Reunião excluída');
 }
 
 // ============== MODAIS — REUNIÕES E LIGAÇÕES ==============
@@ -3753,7 +4177,12 @@ function openReunioesModal() {
             <div class="font-semibold text-slate-900">${empresa}</div>
             ${resp ? `<div class="text-sm text-slate-600">com ${resp}</div>` : ''}
           </div>
-          <span class="text-xs font-semibold text-orange-700 bg-orange-100 px-2 py-1 rounded-full">${a.modalidade || 'online'}</span>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-orange-700 bg-orange-100 px-2 py-1 rounded-full">${a.modalidade || 'online'}</span>
+            <button onclick="excluirReuniao('${a.id}')" title="Excluir reunião" class="p-1.5 rounded-lg hover:bg-red-50 text-red-500 hover:text-red-700 transition">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
         </div>
         <div class="text-sm text-trivium-blue font-medium mb-2 capitalize">${dataFmt} · ${hora}</div>
         ${tel ? `<div class="flex items-center gap-1.5 text-xs text-slate-500 mb-1"><i data-lucide="phone" class="w-3 h-3"></i>${tel}</div>` : ''}
