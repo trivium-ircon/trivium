@@ -358,7 +358,7 @@
               <i data-lucide="arrow-up-right" class="w-4 h-4 text-slate-300 group-hover:text-trivium-blue"></i>
             </div>
             <div class="text-2xl font-bold text-slate-900" id="kpiLeads">0</div>
-            <div class="text-xs text-slate-500 mt-0.5">Leads ativos <span class="text-trivium-blue font-medium">· clique pra ver</span></div>
+            <div class="text-xs text-slate-500 mt-0.5">Leads a contatar <span class="text-trivium-blue font-medium">· clique pra ver</span></div>
           </button>
           <button onclick="goTo('inbox')" class="bg-white rounded-xl p-5 border border-slate-200 hover:shadow-md hover:border-purple-300 transition text-left group">
             <div class="flex items-center justify-between mb-3">
@@ -384,6 +384,25 @@
             <div class="text-2xl font-bold text-slate-900" id="kpiLigacoes">0</div>
             <div class="text-xs text-slate-500 mt-0.5">Ligações pendentes <span class="text-yellow-600 font-medium">· clique pra ver</span></div>
           </button>
+        </div>
+
+        <!-- Metas (dashboard) -->
+        <div class="bg-white rounded-xl border border-slate-200 p-5 mb-6">
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+              <i data-lucide="target" class="w-4 h-4 text-trivium-blue"></i>
+              <h3 class="font-semibold text-slate-900">Metas</h3>
+              <span id="dashMetasLabel" class="text-xs text-slate-500">Hoje</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex bg-slate-100 rounded-lg p-0.5 text-xs">
+                <button onclick="setDashMetasPeriodo('diaria')" data-dmp="diaria" class="dash-metas-btn px-2.5 py-1 rounded-md">Hoje</button>
+                <button onclick="setDashMetasPeriodo('mensal')" data-dmp="mensal" class="dash-metas-btn px-2.5 py-1 rounded-md">Mês</button>
+              </div>
+              <button onclick="goTo('metas')" class="text-xs text-trivium-blue hover:underline">Ver metas →</button>
+            </div>
+          </div>
+          <div id="dashMetas" class="grid grid-cols-3 gap-6"></div>
         </div>
 
         <!-- Chart + Origens -->
@@ -1351,6 +1370,10 @@
         <div>
           <label class="text-sm font-medium block mb-2">Como você classifica essa resposta?</label>
           <div class="grid grid-cols-2 gap-2">
+            <button onclick="setRespClassif('resposta_inicial')" data-classif="resposta_inicial" class="resp-classif-btn border border-slate-200 px-3 py-2 rounded-lg text-sm text-left hover:border-sky-400 col-span-2">
+              <div class="font-medium text-sky-700">👋 Resposta inicial (cordial)</div>
+              <div class="text-xs text-slate-500">Só respondeu o cumprimento ("Oi, tudo bem sim") — ainda sem interesse e sem objeção</div>
+            </button>
             <button onclick="setRespClassif('interessado')" data-classif="interessado" class="resp-classif-btn border border-slate-200 px-3 py-2 rounded-lg text-sm text-left hover:border-green-400">
               <div class="font-medium text-green-700">✅ Interessado</div>
               <div class="text-xs text-slate-500">Quer saber mais / agendar</div>
@@ -2012,6 +2035,8 @@ async function enterApp(user) {
       ]);
       await calcularMetasAtual();
     } catch(e) { console.warn('carregar dados', e); }
+    renderInbox();
+    renderDashboard();
   }
 
   // Atualiza todas as telas com dados reais (ou empty states)
@@ -2411,12 +2436,17 @@ function renderInbox() {
   );
 
   // Conjunto de lead_ids contatados HOJE (via mensagens enviadas hoje)
+  // (corrigido: antes lia MESSAGES_RECENTES, que só tem mensagens recebidas — por isso ficava zerado)
   const hojeDt = new Date(); hojeDt.setHours(0,0,0,0);
   const leadsHojeSet = new Set();
-  (MESSAGES_RECENTES || []).forEach(m => {
-    if (m.direcao !== 'enviada' || !m.lead_id) return;
-    const dt = new Date(m.enviada_em); dt.setHours(0,0,0,0);
-    if (dt.getTime() === hojeDt.getTime()) leadsHojeSet.add(m.lead_id);
+  const primeiroEnvio = {};
+  (MESSAGES_ENVIADAS || []).forEach(m => {
+    if (!m.lead_id || m.classificacao_ia === 'ligacao') return;
+    const t = new Date(m.enviada_em).getTime();
+    if (!primeiroEnvio[m.lead_id] || t < primeiroEnvio[m.lead_id]) primeiroEnvio[m.lead_id] = t;
+  });
+  Object.keys(primeiroEnvio).forEach(id => {
+    if (primeiroEnvio[id] >= hojeDt.getTime()) leadsHojeSet.add(id);
   });
 
   // Atualiza contadores dos filtros (sempre baseado no total geral)
@@ -2451,11 +2481,13 @@ function renderInbox() {
   }
 
   // Ordena por último contato (mais recente primeiro)
-  conversas.sort((a, b) => {
-    const aDate = (a._raw && a._raw.ultimo_contato) || (a._raw && a._raw.created_at) || 0;
-    const bDate = (b._raw && b._raw.ultimo_contato) || (b._raw && b._raw.created_at) || 0;
-    return new Date(bDate) - new Date(aDate);
-  });
+  // Ordena pela atividade mais recente (envio, resposta ou ligação) — mais recente no topo
+  const ultAtiv = {};
+  const marcarAtiv = (id, dt) => { if (!id || !dt) return; const t = new Date(dt).getTime(); if (!ultAtiv[id] || t > ultAtiv[id]) ultAtiv[id] = t; };
+  (MESSAGES_ENVIADAS || []).forEach(m => marcarAtiv(m.lead_id, m.enviada_em));
+  (MESSAGES_RECENTES || []).forEach(m => marcarAtiv(m.lead_id, m.enviada_em));
+  const dataAtiv = (l) => Math.max(ultAtiv[l.id] || 0, new Date((l._raw && (l._raw.ultimo_contato || l._raw.created_at)) || 0).getTime() || 0);
+  conversas.sort((a, b) => dataAtiv(b) - dataAtiv(a));
 
   if (conversas.length === 0) {
     const msgs = {
@@ -2576,6 +2608,7 @@ async function carregarMotivosPerdidos() {
     .not('classificacao_ia', 'is', null)
     .order('enviada_em', { ascending: false });
   (data || []).forEach(m => {
+    if (m.classificacao_ia === 'ligacao') return;
     if (!PERDIDOS_MOTIVOS_CACHE[m.lead_id]) PERDIDOS_MOTIVOS_CACHE[m.lead_id] = m.classificacao_ia;
   });
 }
@@ -2801,7 +2834,7 @@ async function carregarChartData(days) {
   inicio.setDate(inicio.getDate() - (days - 1));
 
   const { data } = await sb.from('messages')
-    .select('direcao, enviada_em, lead_id')
+    .select('direcao, enviada_em, lead_id, classificacao_ia')
     .gte('enviada_em', inicio.toISOString());
 
   // Sets de leads únicos por dia (dedup automático)
@@ -2816,7 +2849,7 @@ async function carregarChartData(days) {
     const diffDias = Math.round((hoje.getTime() - dtDia.getTime()) / 86400000);
     const idx = (days - 1) - diffDias;
     if (idx < 0 || idx >= days) return;
-    if (m.direcao === 'enviada') enviadasSets[idx].add(m.lead_id);
+    if (m.direcao === 'enviada' && m.classificacao_ia !== 'ligacao') enviadasSets[idx].add(m.lead_id);
     else if (m.direcao === 'recebida') respostasSets[idx].add(m.lead_id);
   });
 
@@ -3239,6 +3272,7 @@ async function marcarComoEnviada() {
   lead.status = 'Contatado';
   lead.tag = 'blue';
   lead.last = 'agora';
+  if (lead._raw) lead._raw.ultimo_contato = new Date().toISOString();
 
   // Salva no Supabase se conectado
   if (sb && currentUser && lead.id && !String(lead.id).startsWith('demo-')) {
@@ -3285,7 +3319,7 @@ function openMarcarRespondeu(leadId) {
   document.getElementById('respTexto').value = '';
   document.getElementById('respProximo').value = '';
   document.querySelectorAll('.resp-classif-btn').forEach(b => {
-    b.classList.remove('border-green-400','border-yellow-400','border-orange-400','border-red-400','border-slate-400','bg-slate-50');
+    b.classList.remove('border-green-400','border-yellow-400','border-orange-400','border-orange-500','border-red-400','border-slate-400','border-blue-400','border-sky-400','bg-slate-50','ring-2','ring-orange-400','ring-blue-400');
   });
   document.querySelectorAll('.objecao-btn').forEach(b => b.classList.remove('border-orange-500','bg-orange-50'));
   document.getElementById('objecaoPainel').classList.add('hidden');
@@ -3307,9 +3341,9 @@ function setRespClassif(c) {
   respClassificacao = c;
   respObjecaoTipo = null;
   document.querySelectorAll('.resp-classif-btn').forEach(b => {
-    b.classList.remove('border-green-400','border-yellow-400','border-orange-400','border-orange-500','border-red-400','border-slate-400','bg-slate-50','ring-2','ring-orange-400');
+    b.classList.remove('border-green-400','border-yellow-400','border-orange-400','border-orange-500','border-red-400','border-slate-400','border-blue-400','border-sky-400','bg-slate-50','ring-2','ring-orange-400','ring-blue-400');
   });
-  const map = { interessado:'border-green-400', duvida:'border-yellow-400', objecao:'border-orange-400', reuniao_agendada:'border-orange-500', nao_interessado:'border-red-400', opt_out:'border-slate-400', stand_by:'border-blue-400' };
+  const map = { interessado:'border-green-400', duvida:'border-yellow-400', objecao:'border-orange-400', reuniao_agendada:'border-orange-500', nao_interessado:'border-red-400', opt_out:'border-slate-400', stand_by:'border-blue-400', resposta_inicial:'border-sky-400' };
   const btn = document.querySelector(`.resp-classif-btn[data-classif="${c}"]`);
   if (btn) {
     btn.classList.add(map[c]);
@@ -3415,15 +3449,17 @@ async function salvarRespondeu() {
     nao_interessado: 'perdido',
     opt_out: 'perdido',
     stand_by: 'respondeu',
+    resposta_inicial: 'contatado', // respondeu só por educação: segue em "Aguardando", sem virar ligação pendente
   };
   const novoStatus = statusMap[respClassificacao];
 
   // Atualiza local
-  const tagMap = { respondeu:'purple', perdido:'red', reuniao:'orange' };
-  const labelMap = { respondeu:'Respondeu', perdido:'Perdido', reuniao:'Reunião' };
+  const tagMap = { contatado:'blue', respondeu:'purple', perdido:'red', reuniao:'orange' };
+  const labelMap = { contatado:'Contatado', respondeu:'Respondeu', perdido:'Perdido', reuniao:'Reunião' };
   lead.status = labelMap[novoStatus];
   lead.tag = tagMap[novoStatus];
   lead.last = 'agora';
+  if (lead._raw) lead._raw.ultimo_contato = new Date().toISOString();
 
   // Tag de objeção pra observações
   let observacoesNova = null;
@@ -3453,7 +3489,7 @@ async function salvarRespondeu() {
       };
       if (respClassificacao === 'stand_by') {
         updPayload.proximo_contato = standbyIso;
-      } else if (['interessado','duvida','objecao','reuniao_agendada','nao_interessado','opt_out'].includes(respClassificacao)) {
+      } else if (['interessado','duvida','objecao','reuniao_agendada','nao_interessado','opt_out','resposta_inicial'].includes(respClassificacao)) {
         // Limpa proximo_contato se a classificação mudar pra outra coisa
         updPayload.proximo_contato = null;
       }
@@ -3477,6 +3513,7 @@ async function salvarRespondeu() {
           reuniao_agendada: '[Resposta: reunião agendada]',
           nao_interessado: '[Resposta: sem interesse]',
           stand_by: '[Resposta: aguardar retorno]',
+          resposta_inicial: '[Resposta inicial: cordial]',
         };
         const conteudoMsg = texto || labelClassif[respClassificacao] || '[Resposta registrada]';
         await sb.from('messages').insert({
@@ -3536,6 +3573,7 @@ async function salvarRespondeu() {
   renderInbox();
   renderAtividadeRecente();
   renderInboxCounts();
+  renderDashboard();
 
   // Se foi objeção → abre WhatsApp send modal com template de contorno
   if (respClassificacao === 'objecao' && respObjecaoTipo) {
@@ -3543,6 +3581,11 @@ async function salvarRespondeu() {
     showToastInfo('💪 Vamos contornar essa objeção!');
     setTimeout(() => {
       openWhatsAppSend(lead.id, tipoTpl);
+    }, 600);
+  } else if (respClassificacao === 'resposta_inicial') {
+    showToastInfo('👋 Resposta cordial registrada — envie a 2ª mensagem');
+    setTimeout(() => {
+      openWhatsAppSend(lead.id, 'inicial_2');
     }, 600);
   } else if (respClassificacao === 'stand_by' && standbyIso) {
     const dtFmt = new Date(standbyIso).toLocaleDateString('pt-BR');
@@ -3834,14 +3877,27 @@ async function carregarAppointments() {
   APPOINTMENTS_REAIS = data || [];
 }
 
+// Mensagens enviadas recentes (60 dias) — usadas em Conversas (iniciadas hoje / ordenação) e Atividade recente
+var MESSAGES_ENVIADAS = [];
+
 async function carregarMessagesRecentes() {
   if (!sb || !currentUser) return;
-  const { data } = await sb.from('messages')
-    .select('*, leads(id, nome_empresa, nome_responsavel)')
-    .eq('direcao', 'recebida')
-    .order('enviada_em', { ascending: false })
-    .limit(100);
-  MESSAGES_RECENTES = data || [];
+  const desde = new Date(); desde.setDate(desde.getDate() - 60);
+  const [rec, env] = await Promise.all([
+    sb.from('messages')
+      .select('*, leads(id, nome_empresa, nome_responsavel)')
+      .eq('direcao', 'recebida')
+      .order('enviada_em', { ascending: false })
+      .limit(100),
+    sb.from('messages')
+      .select('id, lead_id, enviada_em, classificacao_ia, leads(id, nome_empresa, nome_responsavel)')
+      .eq('direcao', 'enviada')
+      .gte('enviada_em', desde.toISOString())
+      .order('enviada_em', { ascending: false })
+      .limit(1000),
+  ]);
+  MESSAGES_RECENTES = rec.data || [];
+  MESSAGES_ENVIADAS = env.data || [];
 }
 
 function renderDashboard() {
@@ -3852,7 +3908,7 @@ function renderDashboard() {
   const ligacoes = LEADS.filter(l => l.status === 'Respondeu').length;
   const aptos = LEADS.filter(l => l._raw && l._raw.whatsapp_apto).length;
 
-  setText('kpiLeads', total);
+  setText('kpiLeads', LEADS.filter(l => l.status === 'Novo').length);
   setText('kpiConversas', contatados);
   setText('kpiReunioes', reunioes);
   setText('kpiLigacoes', ligacoes);
@@ -3862,6 +3918,7 @@ function renderDashboard() {
   if (sub) sub.textContent = total === 0 ? '0 leads' : `${total} lead${total>1?'s':''} · ${aptos} apto${aptos>1?'s':''} para WhatsApp`;
 
   renderOrigemList();
+  renderDashMetas();
   renderAtividadeRecente();
   renderProximasReunioes();
   renderInboxCounts();
@@ -3882,10 +3939,79 @@ function renderInboxCounts() {
   const interessados = MESSAGES_RECENTES.filter(m => m.classificacao_ia === 'interessado').length;
   const duvidas = MESSAGES_RECENTES.filter(m => m.classificacao_ia === 'duvida').length;
   const naos = MESSAGES_RECENTES.filter(m => m.classificacao_ia === 'nao_interessado' || m.classificacao_ia === 'opt_out').length;
-  setText('cntTodos', todos);
   setText('cntInteressado', interessados);
   setText('cntDuvida', duvidas);
   setText('cntNao', naos);
+}
+
+// ============== METAS NO DASHBOARD ==============
+var dashMetasPeriodo = 'diaria';
+function setDashMetasPeriodo(p) { dashMetasPeriodo = p; renderDashMetas(); }
+
+function renderDashMetas() {
+  const box = document.getElementById('dashMetas');
+  if (!box) return;
+  let meta = {}, atual = {};
+  try {
+    meta = (METAS && METAS[dashMetasPeriodo]) || {};
+    atual = (METAS_ATUAL && METAS_ATUAL[dashMetasPeriodo]) || {};
+  } catch(e) {}
+  document.querySelectorAll('.dash-metas-btn').forEach(b => {
+    const on = b.dataset.dmp === dashMetasPeriodo;
+    b.classList.toggle('bg-white', on); b.classList.toggle('shadow-sm', on);
+    b.classList.toggle('text-slate-900', on); b.classList.toggle('font-medium', on);
+    b.classList.toggle('text-slate-500', !on);
+  });
+  setText('dashMetasLabel', dashMetasPeriodo === 'diaria' ? 'Hoje' : 'Este mês');
+  const itens = [
+    { label: 'Leads contatados', a: atual.leads || 0, m: meta.leads || 0, suf: '', cor: '#2563EB' },
+    { label: 'Taxa de resposta', a: atual.taxa || 0, m: meta.taxa || 0, suf: '%', cor: '#A855F7' },
+    { label: 'Reuniões / Propostas', a: atual.reunioes || 0, m: meta.reunioes || 0, suf: '', cor: '#EA580C' },
+  ];
+  box.innerHTML = itens.map(i => {
+    const pct = i.m > 0 ? Math.min(100, Math.round((i.a / i.m) * 100)) : 0;
+    const ok = pct >= 100;
+    return `<div>
+      <div class="flex items-baseline justify-between mb-1">
+        <span class="text-xs text-slate-500">${i.label}</span>
+        <span class="text-xs font-medium ${ok ? 'text-green-600' : 'text-slate-400'}">${ok ? '✓ ' : ''}${pct}%</span>
+      </div>
+      <div class="text-xl font-bold text-slate-900">${i.a}${i.suf} <span class="text-sm font-normal text-slate-400">/ ${i.m}${i.suf}</span></div>
+      <div class="h-1.5 bg-slate-100 rounded-full mt-2 overflow-hidden"><div class="h-full rounded-full" style="width:${pct}%;background:${ok ? '#16A34A' : i.cor}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ============== REGISTRO DE LIGAÇÕES ==============
+// Salva como mensagem 'enviada' com classificacao_ia = 'ligacao' (excluída das métricas de envio)
+async function registrarLigacao(leadId) {
+  const lead = LEADS.find(l => String(l.id) === String(leadId));
+  if (!lead || !sb || !currentUser) return;
+  try {
+    const agora = new Date().toISOString();
+    const { error } = await sb.from('messages').insert({
+      user_id: currentUser.id,
+      lead_id: lead.id,
+      direcao: 'enviada',
+      conteudo: '[Ligação realizada]',
+      classificacao_ia: 'ligacao',
+    });
+    if (error) throw error;
+    await sb.from('leads').update({ ultimo_contato: agora }).eq('id', lead.id);
+    if (lead._raw) lead._raw.ultimo_contato = agora;
+    lead.last = 'agora';
+    await carregarMessagesRecentes();
+    renderInbox();
+    renderDashboard();
+    showToastInfo('📞 Ligação registrada — aparece em Atividade recente');
+  } catch(e) {
+    console.error('registrar ligacao', e);
+    alert('Não foi possível registrar a ligação. Tente novamente.');
+  }
+}
+
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 }
 
 function setText(id, txt) {
@@ -4042,35 +4168,73 @@ function renderOrigemList() {
 function renderAtividadeRecente() {
   const list = document.getElementById('atividadeRecente');
   if (!list) return;
-  if (MESSAGES_RECENTES.length === 0) {
+
+  // Primeiro envio de cada lead = conversa iniciada; demais envios = follow-up
+  const primeira = {};
+  (MESSAGES_ENVIADAS || []).forEach(m => {
+    if (!m.lead_id || m.classificacao_ia === 'ligacao') return;
+    const t = new Date(m.enviada_em).getTime();
+    if (!primeira[m.lead_id] || t < primeira[m.lead_id].t) primeira[m.lead_id] = { t, id: m.id };
+  });
+
+  const eventos = [];
+  (MESSAGES_ENVIADAS || []).forEach(m => {
+    let tipo = 'followup';
+    if (m.classificacao_ia === 'ligacao') tipo = 'ligacao';
+    else if (primeira[m.lead_id] && primeira[m.lead_id].id === m.id) tipo = 'iniciada';
+    eventos.push({ tipo, dt: m.enviada_em, lead: m.leads || {}, texto: '' });
+  });
+  (MESSAGES_RECENTES || []).forEach(m => {
+    eventos.push({ tipo: 'resposta', dt: m.enviada_em, lead: m.leads || {}, texto: m.conteudo || '', classif: m.classificacao_ia });
+  });
+
+  if (eventos.length === 0) {
     list.innerHTML = `<div class="text-center py-12 text-sm text-slate-400">
-      <i data-lucide="message-circle" class="w-10 h-10 mx-auto mb-2 text-slate-300"></i>
-      <p>Sem respostas ainda</p>
-      <p class="text-xs mt-1">Quando os leads responderem, vai aparecer aqui</p>
+      <i data-lucide="activity" class="w-10 h-10 mx-auto mb-2 text-slate-300"></i>
+      <p>Sem atividades ainda</p>
+      <p class="text-xs mt-1">Conversas iniciadas, respostas e ligações aparecem aqui</p>
     </div>`;
     lucide.createIcons();
     return;
   }
-  const tagColors = {
-    interessado: { bg:'bg-green-100', text:'text-green-700', avatar:'bg-green-100 text-green-700', label:'Interessado' },
-    duvida: { bg:'bg-yellow-100', text:'text-yellow-700', avatar:'bg-yellow-100 text-yellow-700', label:'Dúvida' },
-    nao_interessado: { bg:'bg-red-100', text:'text-red-700', avatar:'bg-red-100 text-red-700', label:'Não interessado' },
-    opt_out: { bg:'bg-slate-100', text:'text-slate-700', avatar:'bg-slate-100 text-slate-700', label:'Saiu' },
+
+  eventos.sort((a, b) => new Date(b.dt) - new Date(a.dt));
+
+  const tipos = {
+    iniciada: { icon: 'send', cor: 'bg-blue-100 text-blue-700', label: 'Conversa iniciada' },
+    followup: { icon: 'repeat', cor: 'bg-slate-100 text-slate-600', label: 'Follow-up enviado' },
+    ligacao: { icon: 'phone', cor: 'bg-yellow-100 text-yellow-700', label: 'Ligação' },
+    resposta: { icon: 'message-circle', cor: 'bg-purple-100 text-purple-700', label: 'Resposta' },
   };
-  list.innerHTML = MESSAGES_RECENTES.slice(0, 5).map(m => {
-    const empresa = m.leads?.nome_empresa || '—';
-    const resp = m.leads?.nome_responsavel ? ` · ${m.leads.nome_responsavel}` : '';
-    const t = tagColors[m.classificacao_ia] || { bg:'bg-blue-100', text:'text-blue-700', avatar:'bg-blue-100 text-blue-700', label:'Recebida' };
-    const iniciais = empresa.split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase();
-    return `<div class="p-4 flex items-start gap-3 hover:bg-slate-50">
-      <div class="w-9 h-9 rounded-full ${t.avatar} flex items-center justify-center font-medium text-sm flex-shrink-0">${iniciais}</div>
+  const classifLabel = {
+    resposta_inicial: 'Resposta inicial', interessado: 'Respondeu · interessado', duvida: 'Respondeu · dúvida',
+    reuniao_agendada: 'Reunião agendada', nao_interessado: 'Respondeu · sem interesse',
+    opt_out: 'Pediu pra parar', stand_by: 'Respondeu · stand by',
+  };
+
+  list.innerHTML = eventos.slice(0, 8).map(e => {
+    const t = tipos[e.tipo];
+    const empresa = escHtml(e.lead.nome_empresa || '—');
+    const resp = e.lead.nome_responsavel ? ' · ' + escHtml(e.lead.nome_responsavel) : '';
+    let label = t.label;
+    if (e.tipo === 'resposta' && e.classif) {
+      label = classifLabel[e.classif] || (String(e.classif).startsWith('objecao') ? 'Respondeu · objeção' : 'Resposta');
+    }
+    const detalhe = (e.tipo === 'resposta' && e.texto && !e.texto.startsWith('['))
+      ? `<p class="text-xs text-slate-500 mt-1 line-clamp-1">${escHtml(e.texto)}</p>` : '';
+    return `<div class="px-5 py-3 flex items-start gap-3 hover:bg-slate-50">
+      <div class="w-8 h-8 rounded-full ${t.cor} flex items-center justify-center flex-shrink-0"><i data-lucide="${t.icon}" class="w-4 h-4"></i></div>
       <div class="flex-1 min-w-0">
-        <div class="flex items-center justify-between"><span class="font-medium text-sm">${empresa}${resp}</span><span class="text-xs text-slate-400">${formatRelativeTime(m.enviada_em)}</span></div>
-        <p class="text-sm text-slate-600 mt-0.5 line-clamp-2">${m.conteudo}</p>
-        <span class="inline-block mt-1.5 text-[10px] font-semibold uppercase tracking-wide ${t.text} ${t.bg} px-1.5 py-0.5 rounded">${t.label}</span>
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-sm font-medium text-slate-900 truncate">${empresa}${resp}</span>
+          <span class="text-xs text-slate-400 flex-shrink-0">${formatRelativeTime(e.dt)}</span>
+        </div>
+        <span class="inline-block mt-1 text-[10px] font-semibold uppercase tracking-wide ${t.cor} px-1.5 py-0.5 rounded">${label}</span>
+        ${detalhe}
       </div>
     </div>`;
   }).join('');
+  lucide.createIcons();
 }
 
 function renderProximasReunioes() {
@@ -4216,6 +4380,9 @@ function openLigacoesModal() {
           ${tel ? `<a href="tel:${tel}" class="border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 inline-flex items-center gap-1.5">
             <i data-lucide="phone" class="w-3.5 h-3.5"></i>Ligar
           </a>` : ''}
+          <button onclick="registrarLigacao('${l.id}')" class="border border-yellow-300 bg-yellow-50 text-yellow-800 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-yellow-100 inline-flex items-center gap-1.5">
+            <i data-lucide="phone-call" class="w-3.5 h-3.5"></i>Liguei
+          </button>
           <button onclick="document.getElementById('ligacoesModal').classList.add('hidden'); openMarcarRespondeu('${l.id}');" class="border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 inline-flex items-center gap-1.5">
             <i data-lucide="check" class="w-3.5 h-3.5"></i>Atualizar status
           </button>
@@ -4342,7 +4509,7 @@ async function calcularMetasAtual() {
 
   // Busca todas as mensagens do usuário
   const { data: msgs } = await sb.from('messages')
-    .select('direcao, enviada_em, lead_id')
+    .select('direcao, enviada_em, lead_id, classificacao_ia')
     .eq('user_id', currentUser.id);
 
   // Busca appointments do usuário
@@ -4355,7 +4522,7 @@ async function calcularMetasAtual() {
     (msgs || []).forEach(m => {
       const dt = new Date(m.enviada_em);
       if (dt < desde) return;
-      if (m.direcao === 'enviada') {
+      if (m.direcao === 'enviada' && m.classificacao_ia !== 'ligacao') {
         enviadas++;
         if (m.lead_id) leadsContatados.add(m.lead_id);
       } else if (m.direcao === 'recebida') {
@@ -4374,6 +4541,7 @@ async function calcularMetasAtual() {
   METAS_ATUAL.anual = { ...calcularPeriodo(inicioAno), clientes: clientesTotal };
 
   renderMetas();
+  renderDashMetas();
 }
 
 function loadMetas() {
