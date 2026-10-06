@@ -52,6 +52,15 @@
   }
   .gradient-blue { background: linear-gradient(135deg, #2563EB 0%, #3B82F6 50%, #1D4ED8 100%); }
   .gradient-dark { background: linear-gradient(180deg, #0D1321 0%, #111827 100%); }
+  #sidebar { transition: width .2s ease; }
+  #sidebar.sb-collapsed { width: 4.25rem; }
+  #sidebar.sb-collapsed .sb-label,
+  #sidebar.sb-collapsed nav > div,
+  #sidebar.sb-collapsed .nav-item > span { display: none !important; }
+  #sidebar.sb-collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
+  #sidebar.sb-collapsed .sb-header { padding-left: .75rem; padding-right: .75rem; }
+  #sidebar.sb-collapsed .sb-brand,
+  #sidebar.sb-collapsed .sb-user { justify-content: center; }
 </style>
 </head>
 <body class="bg-slate-50">
@@ -245,12 +254,12 @@
 <div id="screen-app" class="hidden h-screen flex bg-slate-50">
 
   <!-- SIDEBAR -->
-  <aside class="w-60 gradient-dark text-white flex flex-col border-r border-slate-800">
-    <div class="p-5 border-b border-slate-800/50">
-      <div class="flex items-center gap-2.5">
+  <aside id="sidebar" class="w-60 flex-shrink-0 gradient-dark text-white flex flex-col border-r border-slate-800">
+    <div class="sb-header p-5 border-b border-slate-800/50">
+      <button onclick="goTo('dashboard')" title="Ir para o Dashboard" class="sb-brand w-full flex items-center gap-2.5 rounded-lg hover:opacity-80 transition">
         <div class="w-8 h-8"><svg viewBox="0 0 64 64" class="w-full h-full"><path d="M4 8 L60 8 L52 22 L40 22 L40 56 L24 56 L24 22 L12 22 Z" fill="url(#trivLogo)"/><path d="M40 22 L40 56 L24 56 L24 38 Z" fill="url(#trivLogoDark)" opacity="0.6"/></svg></div>
-        <span class="text-lg font-bold tracking-tight">TRIVIUM</span>
-      </div>
+        <span class="sb-label text-lg font-bold tracking-tight">TRIVIUM</span>
+      </button>
     </div>
     <nav class="flex-1 px-3 py-4 space-y-0.5 scrollbar-thin overflow-y-auto">
       <button onclick="goTo('dashboard')" data-nav="dashboard" class="nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition">
@@ -295,13 +304,13 @@
       </button>
     </nav>
     <div class="p-3 border-t border-slate-800/50">
-      <div class="flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg cursor-pointer transition">
-        <div class="w-9 h-9 rounded-full gradient-blue flex items-center justify-center font-semibold text-sm">IG</div>
-        <div class="flex-1 min-w-0">
+      <div class="sb-user flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg cursor-pointer transition">
+        <div class="w-9 h-9 flex-shrink-0 rounded-full gradient-blue flex items-center justify-center font-semibold text-sm">IG</div>
+        <div class="sb-label flex-1 min-w-0">
           <div class="text-sm font-medium truncate">Igor Lima</div>
           <div class="text-xs text-slate-400 truncate">Plano Trial · 5 dias</div>
         </div>
-        <button onclick="logout()" class="text-slate-400 hover:text-white"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+        <button onclick="logout()" class="sb-label text-slate-400 hover:text-white"><i data-lucide="log-out" class="w-4 h-4"></i></button>
       </div>
     </div>
   </aside>
@@ -311,6 +320,7 @@
 
     <!-- TOPBAR -->
     <header class="h-16 bg-white border-b border-slate-200 flex items-center px-6 gap-4">
+      <button onclick="toggleSidebar()" id="btnToggleSidebar" title="Recolher / expandir menu" class="p-2 -ml-2 hover:bg-slate-100 rounded-lg text-slate-600"><i data-lucide="menu" class="w-5 h-5"></i></button>
       <div class="flex-1 max-w-md relative">
         <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
         <input placeholder="Buscar lead, campanha, mensagem..." class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:bg-white focus:border-trivium-blue focus:outline-none focus:ring-2 focus:ring-trivium-blue/10" />
@@ -1865,6 +1875,29 @@ const LABEL_COLORS = {
   orange: 'bg-orange-100 text-orange-700',
   red: 'bg-red-100 text-red-700',
 };
+
+// ============== SIDEBAR RECOLHÍVEL ==============
+function aplicarSidebar(recolhida) {
+  const el = document.getElementById('sidebar');
+  if (!el) return;
+  el.classList.toggle('sb-collapsed', recolhida);
+  document.querySelectorAll('#sidebar .nav-item').forEach(b => {
+    const t = ((b.querySelector('span') || {}).textContent || '').trim();
+    if (recolhida) b.title = t; else b.removeAttribute('title');
+  });
+}
+function toggleSidebar() {
+  const recolhida = !document.getElementById('sidebar').classList.contains('sb-collapsed');
+  aplicarSidebar(recolhida);
+  try { localStorage.setItem('triv_sidebar_recolhida', recolhida ? '1' : '0'); } catch(e) {}
+}
+function restaurarSidebar() {
+  let rec = false;
+  try { rec = localStorage.getItem('triv_sidebar_recolhida') === '1'; } catch(e) {}
+  aplicarSidebar(rec);
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', restaurarSidebar);
+else restaurarSidebar();
 
 // ============== NAVIGATION ==============
 function goTo(page) {
